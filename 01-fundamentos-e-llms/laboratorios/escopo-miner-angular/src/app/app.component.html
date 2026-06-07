@@ -1,0 +1,142 @@
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">EM</span>
+    <div>
+      <strong>Escopo Miner</strong>
+      <span>Classificador de clientes</span>
+    </div>
+  </div>
+  <span class="status" [class.ready]="!carregando">
+    <i></i>
+    {{ carregando ? 'Treinando modelo' : 'Modelo pronto' }}
+  </span>
+</header>
+
+<main>
+  <section class="intro">
+    <p class="eyebrow">Dimensionamento operacional</p>
+    <h1>Qual e o escopo deste cliente?</h1>
+    <p>Informe os volumes previstos para obter a classificacao mais provavel.</p>
+  </section>
+
+  <div class="workspace">
+    <section class="form-panel">
+      <div class="section-heading">
+        <div>
+          <span class="step">01</span>
+          <h2>Dados do cliente</h2>
+        </div>
+        <button type="button" class="clear-button" (click)="formulario.reset()">Limpar</button>
+      </div>
+
+      <form [formGroup]="formulario" (ngSubmit)="classificar()">
+        <div class="fields">
+          @for (campo of campos; track campo.chave) {
+            <label>
+              <span>{{ campo.rotulo }}</span>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                [formControlName]="campo.chave"
+                [placeholder]="campo.dica"
+              />
+              @if (formulario.controls[campo.chave].invalid && formulario.controls[campo.chave].touched) {
+                <small>Informe um numero igual ou maior que zero.</small>
+              }
+            </label>
+          }
+        </div>
+
+        <button class="primary-button" type="submit" [disabled]="carregando || classificando">
+          {{ carregando ? 'Preparando modelo...' : classificando ? 'Analisando...' : 'Determinar escopo' }}
+          <span aria-hidden="true">→</span>
+        </button>
+      </form>
+
+      <div class="examples">
+        <span>Preencher exemplo:</span>
+        <div>
+          @for (escopo of escopos; track escopo.nome) {
+            <button type="button" (click)="usarExemplo(escopo)" [disabled]="carregando">
+              {{ escopo.nome }}
+            </button>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="result-panel" [class.has-result]="resultado">
+      <div class="section-heading">
+        <div>
+          <span class="step">02</span>
+          <h2>Resultado</h2>
+        </div>
+      </div>
+
+      @if (resultado) {
+        <div class="scope-result">
+          <span>Escopo recomendado</span>
+          <strong>{{ resultado }}</strong>
+          <p>{{ porcentagem(probabilidades[0].valor) }} de confianca do modelo</p>
+        </div>
+
+        <div class="probabilities">
+          @for (item of probabilidades; track item.nome) {
+            <div class="probability-row">
+              <span>{{ item.nome }}</span>
+              <div class="track">
+                <i [style.width]="porcentagem(item.valor)"></i>
+              </div>
+              <strong>{{ porcentagem(item.valor) }}</strong>
+            </div>
+          }
+        </div>
+
+        <div class="normalized">
+          <span>Entrada normalizada</span>
+          <code>[{{ valoresNormalizados.join(', ') }}]</code>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <span>?</span>
+          <p>O escopo recomendado aparecera aqui apos a analise.</p>
+        </div>
+      }
+    </section>
+  </div>
+
+  <section class="reference">
+    <div class="section-heading">
+      <div>
+        <span class="step">03</span>
+        <h2>Referencias de treinamento</h2>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Escopo</th>
+            <th>Templates</th>
+            <th>Listas</th>
+            <th>Estrategias</th>
+            <th>Colunas</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (escopo of escopos; track escopo.nome) {
+            <tr>
+              <td><strong>{{ escopo.nome }}</strong></td>
+              <td>{{ escopo.templates }}</td>
+              <td>{{ escopo.listas }}</td>
+              <td>{{ escopo.estrategias }}</td>
+              <td>{{ escopo.colunas }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
