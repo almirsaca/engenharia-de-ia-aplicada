@@ -9,15 +9,15 @@ Este repositório reúne todos os códigos, anotações, práticas de laboratór
 
 Abaixo está o cronograma de módulos do curso. Conforme avanço nas aulas e concluo os laboratórios, atualizo o status de conclusão:
 
-- [ ] **Módulo 1: Fundamentos de IA e LLMs para Programadores**  
+- [X] **Módulo 1: Fundamentos de IA e LLMs para Programadores**  
   *Contexto, Web ML, Prompt Engineering, RAG básico e primeiros passos com IA do zero.*  
   📂 Ver pasta: [`/01-fundamentos-e-llms`](./01-fundamentos-e-llms)
 
-- [ ] **Módulo 2: Integração de Modelos e MCP (Model Context Protocol)**  
+- [X] **Módulo 2: Integração de Modelos e MCP (Model Context Protocol)**  
   *Modelos open-source vs. proprietários, RAG avançado, APIs, conceitos e ecossistema MCP.*  
   📂 Ver pasta: [`/02-integracao-e-mcp`](./02-integracao-e-mcp) *(Ajuste o nome se criar esta pasta)*
 
-- [ ] **Módulo 3: Criação de Agentes Autônomos**  
+- [X] **Módulo 3: Criação de Agentes Autônomos**  
   *Arquitetura de Agents, Function Calling, LangGraph, memória, reflexão e sistemas multiagentes.*  
   📂 Ver pasta: [`/04-agentes-autonomos`](./04-agentes-autonomos)
 

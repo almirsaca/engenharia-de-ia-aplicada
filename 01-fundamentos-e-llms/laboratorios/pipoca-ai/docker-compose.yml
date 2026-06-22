@@ -1,0 +1,42 @@
+services:
+  db:
+    image: ankane/pgvector:latest
+    container_name: pipocaai_db
+    environment:
+      POSTGRES_USER: pipoca_user
+      POSTGRES_PASSWORD: pipoca_pass
+      POSTGRES_DB: pipoca_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - pgdata:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer:latest
+    container_name: pipocaai_adminer
+    ports:
+      - '8080:8080'
+    depends_on:
+      - db
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pipocaai_app
+    environment:
+      - PGHOST=db
+      - PGPORT=5432
+      - PGDATABASE=pipoca_db
+      - PGUSER=pipoca_user
+      - PGPASSWORD=pipoca_pass
+      - PORT=3000
+    ports:
+      - '3000:3000'
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+    name: pipocaai_pgdata
