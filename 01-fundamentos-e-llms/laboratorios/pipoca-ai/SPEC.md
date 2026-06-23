@@ -16,8 +16,9 @@ Sistema de recomendação de filmes por afinidade. O sistema analisa o históric
 * A API retorna a lista de 10 filmes ordenada por afinidade para o frontend.
 
 ## 4. Contratos de Dados (Estrutura do Banco)
-* **Tabela `movies`:** `id` (UUID), `title` (VARCHAR), `genres` (TEXT[]), `embedding` (VECTOR(3))).
-* **Tabela `user_profiles`:** `id` (UUID), `liked_movies` (UUID[]), `disliked_movies` (UUID[]), `user_embedding` (VECTOR(3)).
+> Nota: a implementação atual usa identificadores inteiros (`SERIAL`/`INT[]`), conforme o SQL da seção 2.1. Os tipos abaixo refletem o que está em produção.
+* **Tabela `movies`:** `id` (SERIAL), `title` (VARCHAR), `genres` (TEXT[]), `embedding` (VECTOR(3))).
+* **Tabela `user_profiles`:** `id` (SERIAL), `liked_movies` (INT[]), `disliked_movies` (INT[]), `user_embedding` (VECTOR(3)).
 
 ## 5. Próximos Passos (Plano de Execução)
 1. Criar o arquivo `docker-compose.yml` para subir o PostgreSQL com `pgvector`.
@@ -57,6 +58,20 @@ CREATE INDEX ON movies USING hnsw (embedding vector_cosine_ops);
 
 ### 2.2. Contratos da API (Endpoints REST)
 
+#### 0. Perfil do Usuário Ativo
+*   **Rota:** `GET /api/profile?userId={id}`
+*   **Descrição:** Retorna o perfil do usuário (nome e `user_embedding` atual) para a interface exibir. Se `userId` não for informado, resolve o usuário padrão (o de menor id — o "Usuário Piloto" criado no seed), evitando id fixo no frontend.
+*   **Resposta (200 OK):**
+    ```json
+    {
+      "id": 1,
+      "user_name": "Usuário Piloto",
+      "user_embedding": [0.2, 0.0, 0.0],
+      "liked_movies": [3],
+      "disliked_movies": []
+    }
+    ```
+
 #### 1. Listar Vitrine Recomendada
 *   **Rota:** `GET /api/movies?userId={id}`
 *   **Descrição:** Busca o `user_embedding` do usuário. Faz uma busca no banco usando `pgvector` calculando a similaridade de cosseno invertida (menor distância = maior afinidade) e retorna a lista ordenada.
@@ -79,7 +94,16 @@ CREATE INDEX ON movies USING hnsw (embedding vector_cosine_ops);
     }
     ```
 *   **Descrição:** Adiciona o filme à lista correspondente no perfil do usuário. Dispara a lógica do TensorFlow.js para recalcular o `user_embedding` e atualiza o banco de dados.
-*   **Resposta (200 OK):** `{ "message": "Interação registrada e perfil atualizado." }`
+*   **Resposta (200 OK):**
+    ```json
+    {
+      "success": true,
+      "userId": 1,
+      "movieId": 12,
+      "action": "like",
+      "user_embedding": [0.2, 0.0, 0.0]
+    }
+    ```
 
 ## 3. Plano de Execução (Tasking)
 
@@ -105,3 +129,17 @@ CREATE INDEX ON movies USING hnsw (embedding vector_cosine_ops);
   - Validar se o endpoint `POST /api/interactions` atualiza o array e altera o vetor do usuário usando o TensorFlow.js.
   - Validar se o novo cálculo do `GET /api/movies` reordena a vitrine priorizando os gêneros curtidos.
 
+## 5. Interface do Usuário (Frontend)
+
+### 5.1. Requisitos de Tela
+*   **Visão Geral:** Uma página única (SPA) simples e limpa rodando diretamente no navegador (HTML, CSS vanilla e JavaScript).
+*   **Seção Superior (Perfil):** Exibe o nome do usuário ativo e o estado atual do seu vetor de preferência `User Embedding: [x, y, z]` para fins de acompanhamento acadêmico.
+*   **Seção Central (Vitrine de Filmes):** Uma grade de cartões (cards) exibindo os filmes. Cada card deve mostrar o título, os gêneros, a porcentagem de afinidade calculada pela API e dois botões: "👍 Curtir" e "👎 Descurtir".
+
+### 5.2. Plano de Execução (Tasks Frontend)
+- [X] **Task 5.1: Estrutura HTML e Estilização**
+  - Criar um arquivo `public/index.html` com o layout básico, seções de perfil e o container da vitrine.
+  - Adicionar uma estilização CSS minimalista e responsiva para os cards de filmes.
+- [X] **Task 5.2: Integração e Lógica JS**
+  - Criar o arquivo `public/app.js` para consumir o endpoint `GET /api/movies?userId=1` ao carregar a página e renderizar os cards dinamicamente.
+  - Implementar os eventos de clique nos botões "👍" e "👎" para disparar o `POST /api/interactions`, recarregar a vitrine automaticamente e atualizar os dados do vetor na tela.

@@ -66,3 +66,14 @@ O script deve realizar requisições automáticas (usando `fetch` ou `axios`) pa
 4. Validar nova recomendação: Faz um novo GET para a vitrine e valida se a ordem dos filmes mudou, trazendo títulos de Ação para o topo devido à similaridade de cosseno.
 
 Forneça o código do script e me explique como executá-lo no terminal.
+
+📋 Passo 2: Envie o Prompt do Frontend para o Claude
+
+## Prompt 6: Claude, atualizei o nosso `SPEC.md` com a seção do Frontend. Como este projeto é para fins de estudo, o objetivo é ver o comportamento dos dados e dos vetores de forma bem clara na tela.
+
+Com base na "Task 5.1" e "Task 5.2", crie os arquivos da nossa interface:
+1. `public/index.html`: Contendo a estrutura da página, o painel para exibir o vetor atual do usuário e o container para a vitrine. Inclua um CSS embutido ou separado que seja limpo, moderno e organizado em formato de grade (grid) para os filmes.
+2. `public/app.js`: Com a lógica em JavaScript puro que busca os filmes na API, renderiza as porcentagens de afinidade de cada um e gerencia os cliques de "Like/Dislike", atualizando a tela logo em seguida.
+3. Modifique o nosso arquivo principal `server.js` do Express para servir esses arquivos estáticos da pasta `public` (utilizando `express.static`).
+
+Me explique como organizar esses arquivos nas pastas e como abrir o sistema no navegador para testar.

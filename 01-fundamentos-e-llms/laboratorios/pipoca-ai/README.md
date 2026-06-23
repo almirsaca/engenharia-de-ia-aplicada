@@ -18,7 +18,7 @@ Sistema de **recomendação de filmes por afinidade**. O backend analisa as inte
 ## 🧰 Stack
 
 - **Backend:** Node.js + Express (API REST)
-- **IA:** TensorFlow.js (`@tensorflow/tfjs-node`)
+- **IA:** TensorFlow.js (`@tensorflow/tfjs`; `@tensorflow/tfjs-node` opcional em produção)
 - **Banco vetorial:** PostgreSQL + extensão `pgvector` (via Docker)
 
 ---
@@ -27,8 +27,10 @@ Sistema de **recomendação de filmes por afinidade**. O backend analisa as inte
 
 | Método | Rota | Descrição |
 |---|---|---|
+| `GET` | `/api/profile?userId={id}` | Retorna o perfil do usuário ativo (nome + embedding). Sem `userId`, resolve o usuário padrão (Piloto) |
 | `GET` | `/api/movies?userId={id}` | Retorna a vitrine ordenada por afinidade |
 | `POST` | `/api/interactions` | Registra um like/dislike e recalcula o embedding do usuário |
+| `GET` | `/health` | Healthcheck (`{ "status": "ok" }`) |
 
 Detalhes dos contratos (payloads e respostas) em [SPEC.md](./SPEC.md#22-contratos-da-api-endpoints-rest).
 
@@ -40,8 +42,11 @@ Detalhes dos contratos (payloads e respostas) em [SPEC.md](./SPEC.md#22-contrato
 pipoca-ai/
 ├── docker-compose.yml     # PostgreSQL + pgvector
 ├── init.sql               # criação das tabelas e índice vetorial
+├── public/                # frontend (servido por express.static em "/")
+│   ├── index.html         # estrutura + CSS (painel do vetor + grid de filmes)
+│   └── app.js             # lógica vanilla JS (consome a API, like/dislike)
 ├── src/
-│   ├── server.js          # bootstrap do Express
+│   ├── server.js          # bootstrap do Express + arquivos estáticos
 │   ├── db.js              # pool de conexão com o Postgres
 │   ├── seed.js            # carga inicial de filmes e usuário de teste
 │   ├── controllers/       # movieController.js
@@ -92,6 +97,18 @@ npm run test:reco
 ```
 
 > O teste reseta o estado via seed no início, então é determinístico e pode ser executado quantas vezes quiser.
+
+### Abrir a interface no navegador
+
+Com o servidor no ar (`npm start`), acesse:
+
+```
+http://localhost:3000
+```
+
+A cada 👍/👎 o **vetor do usuário** se move e a **vitrine reordena** na hora, priorizando os gêneros curtidos.
+
+> ⚠️ Acesse pela URL `http://localhost:3000` — não abra o `index.html` como `file://`, pois as chamadas `/api/...` deixam de funcionar.
 
 ---
 

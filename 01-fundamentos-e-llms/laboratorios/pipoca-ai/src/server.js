@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const { testConnection } = require('./db');
 const { runSeed } = require('./seed');
@@ -7,7 +8,10 @@ const apiRouter = require('./routes/api');
 const app = express();
 app.use(express.json());
 
-app.get('/', (req, res) => res.json({ status: 'ok' }));
+// Frontend estático (public/index.html é servido em "/").
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api', apiRouter);
 
 app.post('/api/seed', async (req, res) => {

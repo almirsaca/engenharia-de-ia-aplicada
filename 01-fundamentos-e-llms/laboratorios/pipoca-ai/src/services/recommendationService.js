@@ -64,6 +64,12 @@ async function getRecommendedMovies(userEmbedding, limit = 10) {
   });
 }
 
+async function getDefaultUserId() {
+  // Usuário "ativo" padrão para a interface = o de menor id (o Piloto criado no seed).
+  const { rows } = await pool.query('SELECT id FROM user_profiles ORDER BY id LIMIT 1');
+  return rows.length ? rows[0].id : null;
+}
+
 async function getMovieEmbedding(movieId) {
   const { rows } = await pool.query(
     'SELECT embedding FROM movies WHERE id = $1',
@@ -88,6 +94,7 @@ async function updateUserProfile(userId, likedMovies, dislikedMovies, userEmbedd
 module.exports = {
   computeUserEmbedding,
   getUserProfile,
+  getDefaultUserId,
   getRecommendedMovies,
   getMovieEmbedding,
   updateUserProfile,

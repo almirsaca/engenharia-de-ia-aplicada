@@ -1,6 +1,7 @@
 const {
   computeUserEmbedding,
   getUserProfile,
+  getDefaultUserId,
   getRecommendedMovies: findRecommendedMovies,
   getMovieEmbedding,
   updateUserProfile,
@@ -9,6 +10,31 @@ const {
 function normalizeMovieId(value) {
   const id = Number(value);
   return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+// Retorna o perfil do usuário ativo (nome + embedding) para a interface exibir.
+// Se userId não for informado, usa o usuário padrão (Piloto) — evita id fixo no frontend.
+async function getProfile(req, res) {
+  let userId = normalizeMovieId(req.query.userId);
+  if (!userId) {
+    userId = await getDefaultUserId();
+  }
+  if (!userId) {
+    return res.status(404).json({ error: 'No user profile found. Run the seed first.' });
+  }
+
+  const user = await getUserProfile(userId);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found.' });
+  }
+
+  return res.json({
+    id: user.id,
+    user_name: user.user_name,
+    user_embedding: user.user_embedding,
+    liked_movies: user.liked_movies,
+    disliked_movies: user.disliked_movies,
+  });
 }
 
 async function getRecommendedMovies(req, res) {
@@ -74,6 +100,7 @@ async function handleInteraction(req, res) {
 }
 
 module.exports = {
+  getProfile,
   getRecommendedMovies,
   handleInteraction,
 };

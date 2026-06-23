@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍿 PipocaAI — Vitrine</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --panel: #1a1d29;
+      --card: #20242f;
+      --border: #2c313f;
+      --text: #e7e9ee;
+      --muted: #9aa3b2;
+      --accent: #ff5c8a;
+      --action: #ff5c5c;   /* eixo Ação */
+      --drama: #ffd166;    /* eixo Drama */
+      --scifi: #4dd4ff;    /* eixo Ficção Científica */
+      --like: #2ecc71;
+      --dislike: #e74c3c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      text-align: center;
+      padding: 28px 16px 8px;
+    }
+    header h1 { margin: 0; font-size: 1.8rem; }
+    header p { margin: 4px 0 0; color: var(--muted); }
+
+    .container { max-width: 1080px; margin: 0 auto; padding: 16px; }
+
+    /* ---------- Painel de Perfil ---------- */
+    .profile {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+    .profile-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .profile-head h2 { margin: 0; font-size: 1.2rem; }
+    .vector-raw {
+      font-family: 'Consolas', monospace;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+    .dims { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+    .dim-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); }
+    .bar { height: 10px; background: var(--border); border-radius: 6px; overflow: hidden; margin-top: 6px; }
+    .bar > span { display: block; height: 100%; transition: width 0.4s ease; }
+    .dim-acao  .bar > span { background: var(--action); }
+    .dim-drama .bar > span { background: var(--drama); }
+    .dim-scifi .bar > span { background: var(--scifi); }
+
+    /* ---------- Vitrine (grid) ---------- */
+    .showcase-title { font-size: 1.1rem; margin: 0 0 12px; color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .card:hover { transform: translateY(-3px); border-color: var(--accent); }
+    .card h3 { margin: 0; font-size: 1.05rem; }
+    .genres { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      font-size: 0.72rem;
+      background: var(--border);
+      color: var(--muted);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .affinity { margin-top: auto; }
+    .affinity-top { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); }
+    .affinity-val { color: var(--text); font-weight: 600; }
+    .affinity .bar > span { background: linear-gradient(90deg, var(--scifi), var(--accent)); }
+
+    .actions { display: flex; gap: 10px; }
+    .actions button {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      color: #fff;
+      transition: opacity 0.15s ease;
+    }
+    .actions button:hover { opacity: 0.85; }
+    .actions button:disabled { opacity: 0.5; cursor: wait; }
+    .btn-like { background: var(--like); }
+    .btn-dislike { background: var(--dislike); }
+
+    .status { text-align: center; color: var(--muted); padding: 24px; }
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--panel); border: 1px solid var(--border);
+      padding: 10px 18px; border-radius: 10px; opacity: 0;
+      transition: opacity 0.3s ease; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🍿 PipocaAI</h1>
+    <p>Recomendação por afinidade vetorial — visualizando o <em>user embedding</em> em tempo real</p>
+  </header>
+
+  <main class="container">
+    <!-- Seção Superior: Perfil / Vetor do Usuário -->
+    <section class="profile">
+      <div class="profile-head">
+        <h2 id="user-name">Carregando perfil…</h2>
+        <span class="vector-raw" id="vector-raw">[–, –, –]</span>
+      </div>
+      <div class="dims">
+        <div class="dim-acao">
+          <div class="dim-label"><span>Ação</span><span id="val-acao">0.00</span></div>
+          <div class="bar"><span id="bar-acao" style="width:0%"></span></div>
+        </div>
+        <div class="dim-drama">
+          <div class="dim-label"><span>Drama</span><span id="val-drama">0.00</span></div>
+          <div class="bar"><span id="bar-drama" style="width:0%"></span></div>
+        </div>
+        <div class="dim-scifi">
+          <div class="dim-label"><span>Ficção Científica</span><span id="val-scifi">0.00</span></div>
+          <div class="bar"><span id="bar-scifi" style="width:0%"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção Central: Vitrine de Filmes -->
+    <h2 class="showcase-title">🎬 Vitrine recomendada</h2>
+    <div class="grid" id="grid"></div>
+    <p class="status" id="status">Carregando filmes…</p>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
