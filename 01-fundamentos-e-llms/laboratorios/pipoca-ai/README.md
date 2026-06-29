@@ -36,6 +36,52 @@ Detalhes dos contratos (payloads e respostas) em [SPEC.md](./SPEC.md#22-contrato
 
 ---
 
+## 🗄️ Consultas SQL
+
+As queries de runtime ficam em [`src/services/recommendationService.js`](./src/services/recommendationService.js). A peça central é a busca por **similaridade de cosseno** com o operador `<=>` do pgvector.
+
+### Recomendação (coração do sistema)
+
+```sql
+SELECT id, title, genres,
+       GREATEST(0.0, 1 - (embedding <=> $1::vector(3))) AS affinity
+FROM movies
+ORDER BY embedding <=> $1::vector(3)
+LIMIT $2;
+```
+
+- **`<=>`** → operador de **distância de cosseno** do pgvector (`0` = idêntico, `2` = oposto). `$1` é o `user_embedding` atual.
+- **`ORDER BY embedding <=> $1`** → ordena do mais próximo (mais afim) ao mais distante. É aqui que a vitrine é reordenada.
+- **`affinity = 1 - distância`** → converte a distância em um score de afinidade `0–1` (exibido como % na tela). O `GREATEST(0.0, ...)` evita valores negativos.
+- O índice **`hnsw (embedding vector_cosine_ops)`** (criado no `init.sql`) acelera essa ordenação vetorial.
+
+> ⚠️ Para um usuário com vetor nulo `[0,0,0]` (Piloto recém-semeado), o cosseno é indefinido (`NaN`); o backend normaliza a afinidade para `0` nesse caso.
+
+### Demais consultas
+
+```sql
+-- Perfil do usuário (nome + embedding atual)
+SELECT id, user_name, liked_movies, disliked_movies, user_embedding
+FROM user_profiles WHERE id = $1;
+
+-- Usuário padrão (Piloto = menor id), quando userId não é informado
+SELECT id FROM user_profiles ORDER BY id LIMIT 1;
+
+-- Embedding de um filme (usado no recálculo do vetor)
+SELECT embedding FROM movies WHERE id = $1;
+
+-- Persiste o novo perfil após um like/dislike
+UPDATE user_profiles
+SET liked_movies = $1, disliked_movies = $2, user_embedding = $3::vector(3)
+WHERE id = $4;
+```
+
+> Todas usam **parâmetros vinculados** (`$1`, `$2`, …) — nunca concatenação de strings — evitando SQL injection. Vetores são enviados como texto (`'[x,y,z]'`) e convertidos com `::vector(3)`.
+
+A criação do schema (DDL) e o seed ficam em [`init.sql`](./init.sql) e [`src/seed.js`](./src/seed.js).
+
+---
+
 ## 📁 Estrutura
 
 ```
