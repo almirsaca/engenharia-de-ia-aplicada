@@ -1,0 +1,80 @@
+import type { DataType, PretrainedModelOptions } from "@huggingface/transformers";
+
+export const CONFIG = Object.freeze({
+    neo4j: {
+        uri: process.env.NEO4J_URI!,
+        username: process.env.NEO4J_USER!,
+        password: process.env.NEO4J_PASSWORD!,
+    },
+
+    csv: {
+        path: "./data/titanic.csv",
+    },
+
+    // Busca vetorial sobre os chunks indexados pelo laboratório embeddings-neo4j.
+    // Os dois laboratórios compartilham a mesma instância do Neo4j: este grava
+    // nós :Passageiro, o outro grava nós :Chunk.
+    vector: {
+        url: process.env.NEO4J_URI!,
+        username: process.env.NEO4J_USER!,
+        password: process.env.NEO4J_PASSWORD!,
+        indexName: "tensors_index",
+        searchType: "vector" as const,
+        textNodeProperties: ["text"],
+        nodeLabel: "Chunk",
+        retrievalQuery: `
+        RETURN node.text AS text,
+               node { .*, embedding: Null, id: Null, text: Null } AS metadata,
+               score
+        `,
+    },
+
+    embedding: {
+        modelName: process.env.EMBEDDING_MODEL!,
+        pretrainedOptions: {
+            dtype: "fp32" as DataType,
+        } satisfies PretrainedModelOptions,
+    },
+
+    openRouter: {
+        model: process.env.NLP_MODEL,
+        baseURL: "https://openrouter.ai/api/v1",
+        apiKey: process.env.OPENROUTER_API_KEY,
+        // Temperatura zero: geração de Cypher não deve variar entre execuções.
+        temperature: 0,
+        maxRetries: 2,
+        defaultHeaders: {
+            "HTTP-Referer": process.env.OPENROUTER_SITE_URL,
+            "X-Title": process.env.OPENROUTER_SITE_NAME,
+        },
+    },
+
+    similarity: {
+        topK: 3,
+    },
+});
+
+// Descrição do grafo entregue à LLM na geração de Cypher. Mantenha em sincronia
+// com loadGraph.ts — é a única fonte de verdade que o modelo enxerga.
+export const GRAPH_SCHEMA = `
+Nós:
+  (:Passageiro {
+      passageiroId: int, nome: string, sexo: 'male'|'female',
+      idade: float | null, tarifa: float, cabine: string | null,
+      sobreviveu: boolean, irmaosConjuges: int, paisFilhos: int
+  })
+  (:Classe {numero: int, descricao: string})        // 1=Primeira, 2=Segunda, 3=Terceira
+  (:Porto {codigo: string, nome: string})           // C=Cherbourg, Q=Queenstown, S=Southampton
+  (:Bilhete {codigo: string})
+
+Relacionamentos:
+  (:Passageiro)-[:VIAJOU_NA]->(:Classe)
+  (:Passageiro)-[:EMBARCOU_EM]->(:Porto)
+  (:Passageiro)-[:COMPROU]->(:Bilhete)
+
+Observações:
+  - 'sobreviveu' é booleano; use WHERE p.sobreviveu = true para sobreviventes.
+  - 'idade' é null para 177 dos 891 passageiros; filtre com IS NOT NULL ao calcular médias.
+  - 'cabine' é null para a maioria dos passageiros.
+  - Passageiros que compraram o mesmo Bilhete costumam ser famílias ou grupos.
+`.trim();

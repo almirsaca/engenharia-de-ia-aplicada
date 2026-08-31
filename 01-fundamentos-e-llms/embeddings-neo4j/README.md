@@ -220,7 +220,8 @@ embeddings-neo4j/
 ├── docs/
 │   ├── titanic/             # PDFs utilizados como fonte
 │   ├── ia/                  # Material de apoio (não indexado por padrão)
-│   └── Fluxo RAG.md         # O fluxo RAG completo, aplicado ao caso Titanic
+│   ├── Fluxo RAG.md         # O fluxo RAG completo, aplicado ao caso Titanic
+│   └── Kaggle Titanic.md    # Referência do dataset de passageiros (não indexado)
 ├── src/
 │   ├── config.ts            # Configurações da aplicação
 │   ├── index.ts             # Inicialização e prompt interativo

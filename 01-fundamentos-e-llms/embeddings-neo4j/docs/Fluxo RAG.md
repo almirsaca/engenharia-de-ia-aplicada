@@ -233,9 +233,40 @@ O mesmo vale para os avisos de gelo: a lista das seis mensagens de 14/04/1912 (*
 
 Cada pedaço também deveria guardar metadados como nome do documento, seção, página, versão e data de atualização.
 
-### Resumo dos conceitos
+## Quando as fontes discordam
+
+Filtros e reranking resolvem o problema de recuperar o trecho **errado**. Existe um caso mais difícil: recuperar vários trechos **certos** que não concordam entre si.
+
+Procurando o número de vítimas nos três PDFs deste acervo, e comparando com a página da competição [Titanic no Kaggle](https://www.kaggle.com/competitions/titanic):
+
+| Fonte | Mortos | A bordo |
+| --- | ---: | ---: |
+| `O Caso Titanic.pdf` (p.1) | 1.522 | 2.227 |
+| `Titanic - A Projeção Do Transatlântico.pdf` (p.16, p.18) | 1.500 | 2.200 |
+| `Titanic-eBook.pdf` (p.8, p.30) | "more than 1,500" | ~2.200 |
+| Kaggle — *Titanic: Machine Learning from Disaster* | 1.502 | 2.224 |
+
+Nenhuma dupla de fontes concorda exatamente. As diferenças são reais e conhecidas: listas de passageiros da época eram imprecisas, tripulantes entravam e saíam antes da partida, e diferentes comissões de inquérito chegaram a totais distintos. Não há um número "certo" a ser encontrado.
+
+### Por que isso é um problema de engenharia
+
+A busca vetorial vai recuperar essas passagens com scores parecidos, porque todas são igualmente relevantes para a pergunta. O sistema então entrega à LLM um contexto internamente contraditório, e o comportamento padrão de um modelo nessa situação é **escolher um número e apresentá-lo com total confiança** — sem mencionar que os outros trechos diziam algo diferente.
+
+O usuário recebe uma resposta precisa e sem ressalvas para uma pergunta que, na verdade, não tem resposta única.
+
+### O que fazer
+
+- **Instruir o prompt explicitamente.** Algo como *"se as fontes divergirem, apresente as diferentes versões com suas respectivas origens em vez de escolher uma"*. É a defesa mais barata e a mais eficaz.
+- **Sempre citar a fonte de cada afirmação.** Com arquivo e página visíveis, o usuário consegue julgar. Sem citação, ele não tem como sequer suspeitar.
+- **Registrar a divergência como sinal.** Contradição entre trechos recuperados é informação útil: pode indicar documentação desatualizada, versões conflitantes de um procedimento ou fontes de qualidades distintas.
+- **Preferir a fonte mais autoritativa quando houver hierarquia.** Num acervo corporativo, o documento oficial vigente vence o rascunho antigo — e isso normalmente se resolve com metadados (`versao`, `status`), não com o texto.
+
+Este acervo é um bom banco de testes justamente por ser heterogêneo: um trabalho acadêmico, um e-book jornalístico e uma análise de riscos, escritos por autores diferentes, em idiomas diferentes, com números diferentes.
+
+## Resumo dos conceitos
 
 - **Filtros:** determinam quais documentos e trechos são elegíveis para a busca.
 - **Busca vetorial:** encontra candidatos semanticamente semelhantes à pergunta.
 - **Reranking:** identifica e reordena os candidatos que respondem melhor.
 - **Chunking com contexto:** mantém unidades de sentido completas, para que o trecho recuperado baste para responder com segurança.
+- **Tratamento de divergência:** quando as fontes discordam, apresentar as versões com suas origens em vez de escolher uma silenciosamente.
