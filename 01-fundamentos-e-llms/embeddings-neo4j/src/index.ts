@@ -45,11 +45,16 @@ try {
     )
 
     await clearAll(_neo4jVectorStore, CONFIG.neo4j.nodeLabel)
-    for (const [index, doc] of documents.entries()) {
-        console.log(`✅ Adicionando documento ${index + 1}/${documents.length}`);
-        await _neo4jVectorStore.addDocuments([doc])
+
+    const inicio = Date.now()
+    const { batchSize } = CONFIG.indexing
+    for (let i = 0; i < documents.length; i += batchSize) {
+        const lote = documents.slice(i, i + batchSize)
+        await _neo4jVectorStore.addDocuments(lote)
+        console.log(`✅ Indexados ${i + lote.length}/${documents.length} chunks`);
     }
-    console.log("\n✅ Base de dados populada com sucesso!\n");
+    const segundos = ((Date.now() - inicio) / 1000).toFixed(1)
+    console.log(`\n✅ Base de dados populada em ${segundos}s!\n`);
 
 
     // ==================== STEP 2: INTERACTIVE SIMILARITY SEARCH ====================
@@ -58,8 +63,16 @@ try {
 
     questionPrompt = createInterface({ input, output })
 
-    while (true) {
-        const question = (await questionPrompt.question("❓ Pergunta: ")).trim()
+    // Ctrl+D ou entrada redirecionada fecham o stdin; chamar question()
+    // depois disso lanca ERR_USE_AFTER_CLOSE.
+    let entradaFechada = false
+    questionPrompt.on("close", () => { entradaFechada = true })
+
+    while (!entradaFechada) {
+        const resposta = await questionPrompt.question("❓ Pergunta: ")
+        if (entradaFechada) break
+
+        const question = resposta.trim()
 
         if (question.toLowerCase() === "sair") {
             console.log("\n👋 Encerrando a busca...");
@@ -75,7 +88,7 @@ try {
         console.log(`📌 PERGUNTA: ${question}`);
         console.log('='.repeat(80));
 
-        const results = await _neo4jVectorStore.similaritySearch(
+        const results = await _neo4jVectorStore.similaritySearchWithScore(
             question,
             CONFIG.similarity.topK
         )
