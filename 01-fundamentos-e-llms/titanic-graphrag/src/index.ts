@@ -99,7 +99,16 @@ try {
 
                     const linhas = await executar(driver, cypher);
                     imprimirTabela(linhas);
-                    contexto = JSON.stringify(linhas);
+                    // Sem dizer de onde vem o resultado, a LLM trata o JSON como
+                    // dado solto e responde que o contexto é insuficiente.
+                    contexto = [
+                        "Resultado de uma consulta ao banco de dados de passageiros do Titanic",
+                        "(891 registros do conjunto de treino da competição do Kaggle).",
+                        "",
+                        `Consulta executada:\n${cypher}`,
+                        "",
+                        `Resultado:\n${JSON.stringify(linhas)}`,
+                    ].join("\n");
                 } else {
                     const resultados = await buscarNosDocumentos(pergunta);
                     exibirTrechos(resultados);
