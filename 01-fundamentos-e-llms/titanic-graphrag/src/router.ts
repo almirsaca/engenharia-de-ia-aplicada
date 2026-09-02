@@ -20,7 +20,19 @@ export function criarLlm(): ChatOpenAI | null {
 
 async function perguntar(llm: ChatOpenAI, prompt: string): Promise<string> {
     const resposta = await llm.invoke(prompt);
-    return String(resposta.content).trim();
+    const texto = String(resposta.content ?? "").trim();
+
+    // Modelos de raciocínio gastam tokens "pensando" e devolvem content vazio
+    // quando esgotam o orçamento antes de concluir. Sem esta checagem, o vazio
+    // seguiria adiante e viraria uma rota errada ou um Cypher inválido.
+    if (!texto) {
+        const motivo = resposta.response_metadata?.finish_reason ?? "desconhecido";
+        throw new Error(
+            `A LLM devolveu conteúdo vazio (finish_reason: ${motivo}). ` +
+            "Modelos de raciocínio precisam de orçamento de tokens suficiente para concluir.",
+        );
+    }
+    return texto;
 }
 
 const PROMPT_ROTA = `Classifique a pergunta do usuário sobre o Titanic em UMA palavra:
@@ -35,11 +47,18 @@ Responda apenas com a palavra, sem pontuação nem explicação.
 
 Pergunta: {pergunta}`;
 
-export async function classificar(llm: ChatOpenAI, pergunta: string): Promise<Rota> {
-    const bruto = (await perguntar(llm, PROMPT_ROTA.replace("{pergunta}", pergunta))).toLowerCase();
+export async function classificar(llm: ChatOpenAI, pergunta: string): Promise<{ rota: Rota; bruto: string }> {
+    const bruto = await perguntar(llm, PROMPT_ROTA.replace("{pergunta}", pergunta));
+
+    // Compara com a última palavra, não com o texto inteiro: modelos de
+    // raciocínio às vezes explicam antes de concluir, e uma frase como
+    // "não é grafo, são documentos" contém as duas palavras.
+    const limpo = bruto.toLowerCase().replace(/[^a-zá-ú\s]/g, " ").trim();
+    const ultima = limpo.split(/\s+/).filter(p => p === "grafo" || p === "documentos").at(-1);
+
     // Na dúvida, cai para os documentos: uma busca vetorial inútil é mais
     // barata que um Cypher inventado sobre dados que não existem.
-    return bruto.includes("grafo") ? "grafo" : "documentos";
+    return { rota: ultima === "grafo" ? "grafo" : "documentos", bruto };
 }
 
 const PROMPT_CYPHER = `Você escreve consultas Cypher para o Neo4j.
@@ -56,13 +75,13 @@ Regras:
 
 Pergunta: {pergunta}`;
 
-export async function gerarCypher(llm: ChatOpenAI, pergunta: string): Promise<string> {
+export async function gerarCypher(llm: ChatOpenAI, pergunta: string): Promise<{ cypher: string; bruto: string }> {
     const bruto = await perguntar(
         llm,
         PROMPT_CYPHER.replace("{schema}", GRAPH_SCHEMA).replace("{pergunta}", pergunta),
     );
     // Modelos costumam devolver a consulta dentro de uma cerca ```cypher.
-    return bruto.replace(/```(?:cypher)?/gi, "").trim();
+    return { cypher: bruto.replace(/```(?:cypher)?/gi, "").trim(), bruto };
 }
 
 const PROIBIDOS = /\b(CREATE|MERGE|DELETE|DETACH|SET|REMOVE|DROP|LOAD\s+CSV|CALL|FOREACH|USING\s+PERIODIC)\b/i;

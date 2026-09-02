@@ -39,3 +39,6 @@ Desktop.ini
 *.swp
 *.swo
 *~
+
+# Logs de interacao dos laboratorios
+01-fundamentos-e-llms/titanic-graphrag/log/

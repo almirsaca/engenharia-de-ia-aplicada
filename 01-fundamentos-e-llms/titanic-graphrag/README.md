@@ -111,6 +111,43 @@ No prompt:
 | `analises` | roda as sete consultas Cypher prontas |
 | `sair` ou `Ctrl+D` | encerra |
 
+## Log das interações
+
+Toda pergunta recebe um **id de seis dígitos**, exibido no terminal e gravado em `log/interacoes.jsonl` (uma interação por linha, fora do controle de versão).
+
+```text
+❓ Pergunta: Quantas mulheres da terceira classe sobreviveram?
+🆔 ea9ad2
+```
+
+Para inspecionar depois:
+
+```powershell
+npm run log                # lista as últimas interações
+npm run log -- ea9ad2      # detalha uma interação
+npm run log -- --tudo      # detalha todas
+```
+
+O registro guarda cada etapa com seu tempo e, principalmente, a **saída crua da LLM** antes de qualquer tratamento — é onde os problemas costumam estar:
+
+```text
+🆔 ea9ad2   2026-09-02T10:16:46.044Z
+🤖 minimax/minimax-m2.7:free   ⏱️  17.8s
+🧭 rota: grafo
+
+── classificacao  (4.5s)
+   bruto da LLM: grafo
+── cypher  (9.3s)
+   bruto da LLM:
+      MATCH (p:Passageiro)-[:VIAJOU_NA]->(c:Classe)
+      WHERE p.sexo = 'female' AND p.sobreviveu = true AND c.numero = 3
+      RETURN count(p) AS total
+── consulta  (0.1s)
+   resultado: [{ "total": 72 }]
+```
+
+Erros também são gravados: se a rota sair errada, o Cypher for rejeitado ou a resposta não fizer sentido, o `bruto` mostra o que o modelo devolveu de fato. Ao relatar um problema, cite o id.
+
 ## O modelo do grafo
 
 ```text

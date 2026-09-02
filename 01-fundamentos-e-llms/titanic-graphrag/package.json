@@ -6,7 +6,8 @@
     "start": "node --env-file .env --experimental-strip-types src/index.ts",
     "dev": "node --no-warnings --env-file .env --watch --experimental-strip-types src/index.ts",
     "load": "node --env-file .env --experimental-strip-types src/loadGraph.ts",
-    "debug": "node --inspect-brk=9229 --env-file .env --experimental-strip-types src/index.ts"
+    "debug": "node --inspect-brk=9229 --env-file .env --experimental-strip-types src/index.ts",
+    "log": "node --experimental-strip-types src/verLog.ts"
   },
   "keywords": [],
   "license": "MIT",

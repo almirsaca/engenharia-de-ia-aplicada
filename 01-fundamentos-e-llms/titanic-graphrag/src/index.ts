@@ -10,6 +10,7 @@ import { CONFIG } from "./config.ts";
 import { carregarGrafo, contarPassageiros } from "./loadGraph.ts";
 import { executar, imprimirTabela, rodarAnalises } from "./analises.ts";
 import { classificar, criarLlm, gerarCypher, responder, validarCypher } from "./router.ts";
+import { medir, novoRegistro, salvar, ARQUIVO_LOG } from "./log.ts";
 
 const driver = neo4j.driver(
     CONFIG.neo4j.uri,
@@ -64,6 +65,7 @@ try {
         console.log("⚠️  OPENROUTER_API_KEY ausente — modo sem LLM.");
     }
 
+    console.log(`📝 Log das interações: ${ARQUIVO_LOG}  (ver com: npm run log -- <id>)`);
     console.log("\nDigite uma pergunta, 'analises' para as consultas prontas, ou 'sair'.\n");
 
     prompt = createInterface({ input, output });
@@ -86,18 +88,37 @@ try {
 
         console.log(`\n${"=".repeat(80)}`);
 
+        const registro = novoRegistro(pergunta, CONFIG.openRouter.model);
+        console.log(`🆔 ${registro.id}`);
+
         if (llm) {
             try {
-                const rota = await classificar(llm, pergunta);
+                const { rota, bruto } = await medir(
+                    registro, "classificacao",
+                    () => classificar(llm!, pergunta),
+                    v => ({ bruto: v.bruto, resultado: v.rota }),
+                );
+                registro.rota = rota;
                 console.log(`🧭 Rota: ${rota === "grafo" ? "GRAFO (Cypher)" : "DOCUMENTOS (busca vetorial)"}`);
+                if (bruto.trim().toLowerCase() !== rota) {
+                    console.log(`   (a LLM respondeu: ${JSON.stringify(bruto.slice(0, 120))})`);
+                }
 
                 let contexto: string;
                 if (rota === "grafo") {
-                    const cypher = await gerarCypher(llm, pergunta);
+                    const { cypher } = await medir(
+                        registro, "cypher",
+                        () => gerarCypher(llm!, pergunta),
+                        v => ({ bruto: v.bruto, resultado: v.cypher }),
+                    );
                     validarCypher(cypher);
                     console.log(`\n🔍 Cypher gerado:\n${cypher.split("\n").map(l => "      " + l.trim()).join("\n")}\n`);
 
-                    const linhas = await executar(driver, cypher);
+                    const linhas = await medir(
+                        registro, "consulta",
+                        () => executar(driver, cypher),
+                        v => ({ resultado: v }),
+                    );
                     imprimirTabela(linhas);
                     // Sem dizer de onde vem o resultado, a LLM trata o JSON como
                     // dado solto e responde que o contexto é insuficiente.
@@ -110,16 +131,31 @@ try {
                         `Resultado:\n${JSON.stringify(linhas)}`,
                     ].join("\n");
                 } else {
-                    const resultados = await buscarNosDocumentos(pergunta);
+                    const resultados = await medir(
+                        registro, "busca",
+                        () => buscarNosDocumentos(pergunta),
+                        v => ({ resultado: v.map(([doc, score]) => ({ origem: origemDe(doc), score })) }),
+                    );
                     exibirTrechos(resultados);
                     contexto = resultados
                         .map(([doc]) => `[${origemDe(doc)}]\n${doc.pageContent.replace(/\s+/g, " ").trim()}`)
                         .join("\n\n");
                 }
 
-                console.log(`\n💬 ${await responder(llm, pergunta, contexto)}\n`);
+                registro.etapas["contexto"] = { ms: 0, resultado: contexto };
+
+                const texto = await medir(
+                    registro, "resposta",
+                    () => responder(llm!, pergunta, contexto),
+                    v => ({ bruto: v }),
+                );
+                registro.resposta = texto;
+                console.log(`\n💬 ${texto}\n`);
+                await salvar(registro);
                 continue;
             } catch (erro) {
+                registro.erro = erro instanceof Error ? erro.message : String(erro);
+                await salvar(registro);
                 if (ehErroDeAutenticacao(erro)) {
                     console.error(`\n❌ O OpenRouter recusou a chave: ${erro instanceof Error ? erro.message : erro}`);
                     console.error("   Gere uma nova em https://openrouter.ai/keys e atualize a variável");
@@ -137,7 +173,14 @@ try {
         // roda localmente e as análises do grafo continuam disponíveis.
         console.log("🧭 Modo sem LLM: busca vetorial nos documentos.");
         console.log("   (para perguntas sobre os passageiros, use o comando 'analises')");
-        exibirTrechos(await buscarNosDocumentos(pergunta));
+        registro.rota = "documentos";
+        const semLlm = await medir(
+            registro, "busca",
+            () => buscarNosDocumentos(pergunta),
+            v => ({ resultado: v.map(([doc, score]) => ({ origem: origemDe(doc), score })) }),
+        );
+        exibirTrechos(semLlm);
+        await salvar(registro);
         console.log();
     }
 
