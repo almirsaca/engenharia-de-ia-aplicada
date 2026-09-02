@@ -73,11 +73,12 @@ As credenciais do exemplo correspondem ao `NEO4J_AUTH` definido no `docker-compo
 O `config.ts` também possui configurações reservadas para uma futura integração com OpenRouter. Elas não são necessárias para o fluxo atual de busca vetorial:
 
 ```dotenv
-OPENROUTER_API_KEY=
 OPENROUTER_SITE_URL=
 OPENROUTER_SITE_NAME=
 NLP_MODEL=
 ```
+
+A chave do OpenRouter não fica no `.env`: é lida da variável de ambiente da máquina `OpenRouter__ApiKey`. Como o `--env-file` do Node não expande `${VAR}`, a referência é feita no próprio `config.ts`, que aceita `OPENROUTER_API_KEY` como alternativa. O laboratório [titanic-graphrag](../titanic-graphrag/) documenta o procedimento em detalhe.
 
 O arquivo `.env` está ignorado pelo Git e não deve ser versionado.
 

@@ -51,13 +51,29 @@ NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=password
 EMBEDDING_MODEL=Xenova/paraphrase-multilingual-MiniLM-L12-v2
-
-# Opcional: habilita o roteamento e a resposta gerada
-OPENROUTER_API_KEY=
 NLP_MODEL='google/gemma-3-27b-it:free'
 ```
 
-Sem `OPENROUTER_API_KEY` — ou com uma chave recusada — a aplicação entra em **modo sem LLM**: o comando `analises` e a busca vetorial continuam funcionando, apenas sem roteamento automático e sem resposta redigida.
+### A chave do OpenRouter
+
+A chave **não fica no `.env`**. Ela é lida da variável de ambiente da máquina `OpenRouter__ApiKey`, o que evita mantê-la em arquivo dentro do repositório.
+
+```powershell
+# Definir para o usuário atual (permanente)
+[Environment]::SetEnvironmentVariable('OpenRouter__ApiKey', 'sk-or-v1-...', 'User')
+```
+
+Depois de definir, é preciso abrir um novo terminal para que o valor apareça.
+
+O `--env-file` do Node **não expande `${VAR}`** — uma linha como `OPENROUTER_API_KEY=${OpenRouter__ApiKey}` no `.env` guardaria a string literal, não o valor. Por isso a leitura acontece em `src/config.ts`:
+
+```typescript
+apiKey: process.env.OpenRouter__ApiKey ?? process.env.OPENROUTER_API_KEY,
+```
+
+`OPENROUTER_API_KEY` segue aceita como alternativa, para quem preferir defini-la no `.env`.
+
+Sem chave — ou com uma chave recusada — a aplicação entra em **modo sem LLM**: o comando `analises` e a busca vetorial continuam funcionando, apenas sem roteamento automático e sem resposta redigida.
 
 ## Os dados
 

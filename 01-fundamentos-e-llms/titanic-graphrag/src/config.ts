@@ -39,7 +39,11 @@ export const CONFIG = Object.freeze({
     openRouter: {
         model: process.env.NLP_MODEL,
         baseURL: "https://openrouter.ai/api/v1",
-        apiKey: process.env.OPENROUTER_API_KEY,
+        // A chave vive na variável de ambiente da máquina `OpenRouter__ApiKey`,
+        // fora do .env. O `--env-file` do Node não expande `${VAR}`, então a
+        // referência precisa ser feita aqui. OPENROUTER_API_KEY continua
+        // aceita como alternativa, para quem preferir defini-la no .env.
+        apiKey: process.env.OpenRouter__ApiKey ?? process.env.OPENROUTER_API_KEY,
         // Temperatura zero: geração de Cypher não deve variar entre execuções.
         temperature: 0,
         maxRetries: 2,

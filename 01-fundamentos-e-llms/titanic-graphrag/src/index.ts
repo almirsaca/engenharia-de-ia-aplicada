@@ -43,7 +43,7 @@ function exibirTrechos(resultados: [Document, number][]): void {
 
 function ehErroDeAutenticacao(erro: unknown): boolean {
     const texto = erro instanceof Error ? erro.message : String(erro);
-    return /401|authentication|user not found|invalid api key/i.test(texto);
+    return /401|authentication|user not found|invalid api key|api key expired/i.test(texto);
 }
 
 try {
@@ -112,8 +112,9 @@ try {
                 continue;
             } catch (erro) {
                 if (ehErroDeAutenticacao(erro)) {
-                    console.error("\n❌ O OpenRouter recusou a chave (401).");
-                    console.error("   Gere uma nova em https://openrouter.ai/keys e atualize OPENROUTER_API_KEY no .env.");
+                    console.error(`\n❌ O OpenRouter recusou a chave: ${erro instanceof Error ? erro.message : erro}`);
+                    console.error("   Gere uma nova em https://openrouter.ai/keys e atualize a variável");
+                    console.error("   de ambiente OpenRouter__ApiKey (ou OPENROUTER_API_KEY no .env).");
                     console.error("   Seguindo em modo sem LLM nesta sessão.\n");
                     llm = null;
                 } else {
