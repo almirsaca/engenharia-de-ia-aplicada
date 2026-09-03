@@ -188,9 +188,10 @@ try {
                     await salvar(registro);
                     const mensagem = erro instanceof Error ? erro.message : String(erro);
                     console.error(`\n❌ ${mensagem}`);
-                    if (/timed out|timeout/i.test(mensagem)) {
-                        console.error(`   A requisição passou de ${CONFIG.openRouter.timeoutMs / 1000}s e foi abortada.`);
+                    if (/timed out|timeout|abort/i.test(mensagem)) {
+                        console.error(`   A etapa passou de ${CONFIG.openRouter.prazoTotalMs / 1000}s e foi abortada.`);
                         console.error(`   Modelos gratuitos ficam lentos sob carga; tente de novo ou troque o NLP_MODEL.`);
+                        console.error(`   Modelos gratuitos disponíveis: https://openrouter.ai/models?max_price=0`);
                     }
                     console.error(`   Interação registrada como ${registro.id} — veja com: npm run log -- ${registro.id}\n`);
                     continue;

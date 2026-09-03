@@ -123,6 +123,19 @@ O total se ajusta assim que a rota é decidida: quatro etapas pelo grafo (classi
 
 A barra só aparece em terminal interativo. Com a saída redirecionada — para um arquivo ou num pipe — ela fica em silêncio, para não encher o log de sequências de escape.
 
+Passados 45 segundos na mesma etapa, ela acrescenta . O contador subindo indica que o processo está vivo, aguardando a rede; se ele congelar, aí sim houve travamento.
+
+### Limites de tempo
+
+Duas configurações distintas em :
+
+| Opção | Padrão | Alcance |
+| --- | ---: | --- |
+|  | 45 s | cada tentativa isolada |
+|  | 60 s | a etapa inteira, retentativas incluídas |
+
+O SDK da OpenAI usa **dez minutos** de timeout por padrão, e cada retentativa recomeça essa contagem. Com , o tempo total é  — muito além do que o limite por tentativa sugere. Por isso cada chamada recebe também um , que aborta a requisição de verdade e cobre o passo inteiro.
+
 ## Log das interações
 
 Toda pergunta recebe um **id de seis dígitos**, exibido no terminal e gravado em `log/interacoes.jsonl` (uma interação por linha, fora do controle de versão).

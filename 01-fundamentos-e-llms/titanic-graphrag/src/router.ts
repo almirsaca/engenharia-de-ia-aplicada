@@ -20,7 +20,12 @@ export function criarLlm(): ChatOpenAI | null {
 }
 
 async function perguntar(llm: ChatOpenAI, prompt: string): Promise<string> {
-    const resposta = await llm.invoke(prompt);
+    // O sinal cobre o passo inteiro e aborta a requisição de verdade, incluindo
+    // as retentativas internas do SDK — o `timeout` do cliente limita apenas
+    // cada tentativa isolada.
+    const resposta = await llm.invoke(prompt, {
+        signal: AbortSignal.timeout(CONFIG.openRouter.prazoTotalMs),
+    });
     const texto = String(resposta.content ?? "").trim();
 
     // Modelos de raciocínio gastam tokens "pensando" e devolvem content vazio
