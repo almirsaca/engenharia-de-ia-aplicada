@@ -3,14 +3,21 @@ import type { Document } from "@langchain/core/documents"
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters'
 import { basename } from "node:path"
 import { type PdfSource, type TextSplitterConfig } from "./src/config.ts"
+import { normalizarDocumento } from "./src/textNormalizer.ts"
 
 export class DocumentProcessor {
     private pdfSources: readonly PdfSource[]
     private textSplitterConfig: TextSplitterConfig
+    private normalizar: boolean
 
-    constructor(pdfSources: readonly PdfSource[], textSplitterConfig: TextSplitterConfig) {
+    constructor(
+        pdfSources: readonly PdfSource[],
+        textSplitterConfig: TextSplitterConfig,
+        normalizar = false,
+    ) {
         this.pdfSources = pdfSources
         this.textSplitterConfig = textSplitterConfig
+        this.normalizar = normalizar
     }
 
     async loadAndSplit() {
@@ -19,6 +26,14 @@ export class DocumentProcessor {
         for (const source of this.pdfSources) {
             const loader = new PDFLoader(source.path)
             const pdfDocuments = await loader.load()
+
+            if (this.normalizar) {
+                // Normaliza com o documento inteiro em mãos: cabeçalhos e rodapés
+                // só se revelam pela repetição entre as páginas.
+                const textos = normalizarDocumento(pdfDocuments.map(d => d.pageContent))
+                pdfDocuments.forEach((doc, i) => { doc.pageContent = textos[i]! })
+            }
+
             const selectedPages = this.selectPages(pdfDocuments, source)
             rawDocuments.push(...selectedPages)
 

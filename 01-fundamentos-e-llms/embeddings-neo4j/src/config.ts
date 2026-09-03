@@ -61,6 +61,12 @@ export const CONFIG = Object.freeze({
         chunkSize: 1000,
         chunkOverlap: 200,
     },
+    // Reconstitui parágrafos antes de dividir. O texto que sai do PDF tem uma
+    // quebra por linha impressa, sem `\n\n`, então o splitter nunca encontra
+    // fronteira de parágrafo e corta frases ao meio. Ver src/textNormalizer.ts.
+    normalizacao: {
+        ativa: true,
+    },
     embedding: {
         modelName: process.env.EMBEDDING_MODEL!,
         pretrainedOptions: {

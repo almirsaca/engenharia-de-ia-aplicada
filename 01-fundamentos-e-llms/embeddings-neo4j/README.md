@@ -135,6 +135,7 @@ As principais opções disponíveis no mesmo arquivo são:
 | Opção | Padrão | Finalidade |
 | --- | ---: | --- |
 | `pdf.paths[].pages` | — | Intervalo de páginas a indexar. Omitido = documento inteiro. |
+| `normalizacao.ativa` | `true` | Reconstitui parágrafos antes de dividir. |
 | `textSplitter.chunkSize` | `1000` | Tamanho máximo aproximado de cada trecho. |
 | `textSplitter.chunkOverlap` | `200` | Sobreposição entre trechos consecutivos. |
 | `indexing.batchSize` | `50` | Trechos enviados por chamada ao Neo4j. |
@@ -142,6 +143,33 @@ As principais opções disponíveis no mesmo arquivo são:
 | `neo4j.indexName` | `trechos_index` | Nome do índice vetorial no Neo4j. |
 | `neo4j.nodeLabel` | `Trecho` | Label usado para os documentos indexados. |
 | `neo4j.retrievalQuery` | — | Cypher que devolve texto, metadados e score de cada resultado. |
+
+### Normalização do texto antes de dividir
+
+O `RecursiveCharacterTextSplitter` tenta separadores em ordem — `["\n\n", "\n", " ", ""]` — preferindo cortar em fronteira de parágrafo. Ele só corta no meio de uma frase quando o pedaço ainda excede o `chunkSize`; o último separador é `""`, capaz de partir uma palavra ao meio.
+
+O problema é que **o texto extraído de PDF não tem parágrafos**. Nas 97 páginas deste acervo, nenhuma contém `\n\n`: o `pdf-parse` devolve uma quebra por linha *impressa*, porque o formato PDF guarda posições de texto, não estrutura. Sem o primeiro separador, o splitter agrupa linhas soltas até completar 1000 caracteres, ignorando frases.
+
+`src/textNormalizer.ts` reconstrói a estrutura antes da divisão:
+
+- junta linhas que não terminam em pontuação final — são a mesma frase, quebrada pela diagramação;
+- reúne palavras hifenizadas pela quebra de linha (`trans-` + `atlântico`);
+- remove numeração de página isolada (`12`, `13 / 19`);
+- remove cabeçalhos e rodapés, detectados por se repetirem em pelo menos 60% das páginas do documento;
+- colapsa o espaçamento múltiplo do texto justificado;
+- insere `\n\n` no fim de cada frase completa, dando ao splitter a fronteira que ele procura.
+
+O efeito medido sobre os cinco PDFs:
+
+| Métrica | Sem normalizar | Normalizado |
+| --- | ---: | ---: |
+| Trechos que terminam em pontuação | 28% | **80%** |
+| Trechos que começam com maiúscula | 30% | **82%** |
+| Total de trechos | 323 | 317 |
+
+Trechos mais limpos também pontuam melhor. A pergunta *"Havia botes salva-vidas suficientes?"* recuperava um trecho que começava com `"acabara de passar."` a 83,5%; depois da normalização, o mesmo conteúdo começa na frase correta e pontua **86,1%** — sem o texto irrelevante no início, o vetor representa melhor o assunto.
+
+Para desligar e comparar, use `CONFIG.normalizacao.ativa`.
 
 ### Por que existe um `retrievalQuery`
 
@@ -227,6 +255,7 @@ embeddings-neo4j/
 │   └── Kaggle Titanic.md    # Referência do dataset de passageiros (não indexado)
 ├── src/
 │   ├── config.ts            # Configurações da aplicação
+│   ├── textNormalizer.ts    # Reconstrução de parágrafos do texto do PDF
 │   ├── index.ts             # Inicialização e prompt interativo
 │   └── util.ts              # Formatação dos resultados
 ├── documentProcessor.ts     # Carregamento e divisão dos PDFs

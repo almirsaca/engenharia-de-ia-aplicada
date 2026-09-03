@@ -25,6 +25,7 @@ try {
     const documentProcessor = new DocumentProcessor(
         CONFIG.pdf.paths,
         CONFIG.textSplitter,
+        CONFIG.normalizacao.ativa,
     )
     const documents = await documentProcessor.loadAndSplit()
     const embeddings = new HuggingFaceTransformersEmbeddings({

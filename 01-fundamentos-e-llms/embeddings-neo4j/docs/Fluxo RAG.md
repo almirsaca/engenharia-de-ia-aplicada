@@ -33,15 +33,20 @@ As saídas abaixo foram produzidas pela aplicação deste laboratório, sem edi�
 ### Trechos recuperados
 
 ```text
-[83.5%] O Caso Titanic.pdf p.2
-  ...Apesar de todos os avisos o Titanic não reduziu a velocidade, mantendo-se
-  a 21.5 nós. Os número de botes salva-vidas era insuficiente, uma vez que o
-  Titanic era capaz de acomodar 1.178 pessoas, ou seja, 53% das pessoas abordo...
+[86.1%] O Caso Titanic.pdf p.2
+  Os número de botes salva-vidas era insuficiente, uma vez que o Titanic era
+  capaz de acomodar 1.178 pessoas, ou seja, 53% das pessoas abordo. Durante a
+  viagem, nem os passageiros e nem a tripulação, praticaram os procedimentos
+  de emergência para os desastres...
 
-[81.2%] Titanic - A Projeção Do Transatlântico.pdf p.7
-  ...Marconi, com grande potência, situada no convés das embarcações a bombordo,
-  após os aposentos dos oficiais...
+[81.9%] Titanic - A Projeção Do Transatlântico.pdf p.14
+  O iceberg fez um corte de 100 metros de comprimento no casco do navio,
+  abrindo os primeiros compartimentos estanques. (...) Vinte barcos e botes
+  salva-vidas distribuídos na proa e na popa ofereciam uma acomodação para um
+  total de 1.178 pessoas (33% da capacidade total do Titanic)...
 ```
+
+Repare que os dois trechos começam no início de uma frase. Antes da normalização, o primeiro resultado começava com `"acabara de passar."` — sobra da frase anterior — e pontuava 83,5%.
 
 ### Prompt que seria enviado à LLM
 
@@ -80,7 +85,7 @@ Executada quando os documentos são cadastrados ou atualizados:
 | Gerar os *embeddings* dos trechos | `HuggingFaceTransformersEmbeddings` |
 | Armazenar vetores e metadados | `Neo4jVectorStore.addDocuments` |
 
-Neste acervo, 90 páginas de PDF viram **308 chunks**, indexados em cerca de 42 segundos.
+Neste acervo, 90 páginas de PDF viram **303 chunks**, indexados em cerca de 50 segundos. O texto passa por uma normalização antes da divisão, porque PDF não preserva parágrafos — ver a seção correspondente no [README](../README.md).
 
 ### 2. Consulta
 
