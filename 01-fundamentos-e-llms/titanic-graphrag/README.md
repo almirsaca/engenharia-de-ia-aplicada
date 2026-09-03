@@ -115,7 +115,10 @@ No prompt:
 
 Cada pergunta faz até quatro etapas e pode levar de 30 a 60 segundos com os modelos gratuitos. Enquanto isso, uma barra mostra em que ponto está:
 
-\
+```text
+   ⠹ [█████░░░░░] 3/4 consultando o grafo… 18.4s
+```
+
 O total se ajusta assim que a rota é decidida: quatro etapas pelo grafo (classificar, gerar Cypher, consultar, responder) e três pelos documentos (classificar, buscar, responder).
 
 A barra só aparece em terminal interativo. Com a saída redirecionada — para um arquivo ou num pipe — ela fica em silêncio, para não encher o log de sequências de escape.
