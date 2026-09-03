@@ -186,7 +186,13 @@ try {
                     // O erro de autenticação cai para o modo sem LLM abaixo, que
                     // grava o registro; os demais encerram aqui e gravam agora.
                     await salvar(registro);
-                    console.error(`\n❌ ${erro instanceof Error ? erro.message : erro}\n`);
+                    const mensagem = erro instanceof Error ? erro.message : String(erro);
+                    console.error(`\n❌ ${mensagem}`);
+                    if (/timed out|timeout/i.test(mensagem)) {
+                        console.error(`   A requisição passou de ${CONFIG.openRouter.timeoutMs / 1000}s e foi abortada.`);
+                        console.error(`   Modelos gratuitos ficam lentos sob carga; tente de novo ou troque o NLP_MODEL.`);
+                    }
+                    console.error(`   Interação registrada como ${registro.id} — veja com: npm run log -- ${registro.id}\n`);
                     continue;
                 }
             }

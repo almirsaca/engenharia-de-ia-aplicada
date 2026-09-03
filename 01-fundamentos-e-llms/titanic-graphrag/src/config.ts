@@ -48,6 +48,10 @@ export const CONFIG = Object.freeze({
         // Temperatura zero: geração de Cypher não deve variar entre execuções.
         temperature: 0,
         maxRetries: 2,
+        // O SDK da OpenAI usa 10 minutos por padrão. Com maxRetries: 2, uma
+        // requisição estagnada prenderia o terminal por até meia hora. As etapas
+        // medidas levam de 5 a 19 segundos, então 90 s é folga suficiente.
+        timeoutMs: 90_000,
         defaultHeaders: {
             "HTTP-Referer": process.env.OPENROUTER_SITE_URL,
             "X-Title": process.env.OPENROUTER_SITE_NAME,

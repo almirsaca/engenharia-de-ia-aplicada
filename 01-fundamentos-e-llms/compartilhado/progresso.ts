@@ -22,9 +22,18 @@ export class Progresso {
     private timer: NodeJS.Timeout | null = null;
     private readonly ativo: boolean;
 
-    constructor(total: number, ativo: boolean = Boolean(process.stdout.isTTY)) {
+    // Declarado como campo, e não como parameter property: o
+    // --experimental-strip-types apenas remove tipos, sem transformar código.
+    private readonly avisarApos: number;
+
+    constructor(
+        total: number,
+        ativo: boolean = Boolean(process.stdout.isTTY),
+        avisarApos = 45,
+    ) {
         this.total = Math.max(1, total);
         this.ativo = ativo;
+        this.avisarApos = avisarApos;
     }
 
     /** Avança para a próxima etapa e passa a exibir o rótulo informado. */
@@ -86,8 +95,13 @@ export class Progresso {
         const giro = QUADROS[this.quadro = (this.quadro + 1) % QUADROS.length];
         const passo = Math.min(this.concluidas + 1, this.total);
 
+        // O contador subindo já mostra que o processo está vivo; passado o
+        // limiar, deixa explícito que a espera saiu do normal.
+        const decorrido = this.segundos;
+        const aviso = decorrido > this.avisarApos ? "  (mais lento que o normal)" : "";
+
         process.stdout.write(
-            `\r\x1b[K   ${giro} [${barra}] ${passo}/${this.total} ${this.rotulo}… ${this.segundos.toFixed(1)}s`,
+            `\r\x1b[K   ${giro} [${barra}] ${passo}/${this.total} ${this.rotulo}… ${decorrido.toFixed(1)}s${aviso}`,
         );
     }
 }

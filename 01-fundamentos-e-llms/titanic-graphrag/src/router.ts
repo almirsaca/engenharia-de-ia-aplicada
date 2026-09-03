@@ -11,6 +11,7 @@ export function criarLlm(): ChatOpenAI | null {
         apiKey: CONFIG.openRouter.apiKey,
         temperature: CONFIG.openRouter.temperature,
         maxRetries: CONFIG.openRouter.maxRetries,
+        timeout: CONFIG.openRouter.timeoutMs,
         configuration: {
             baseURL: CONFIG.openRouter.baseURL,
             defaultHeaders: CONFIG.openRouter.defaultHeaders,
