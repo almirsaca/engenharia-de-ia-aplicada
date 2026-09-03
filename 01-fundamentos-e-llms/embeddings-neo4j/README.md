@@ -23,7 +23,14 @@ O fluxo da aplicação é:
 
 > **Atenção:** sempre que a aplicação é iniciada, ela remove todos os nós com o label configurado em `CONFIG.neo4j.nodeLabel` antes de indexar novamente os documentos.
 
-Para entender o papel de cada etapa dentro de um sistema RAG completo, consulte [Fluxo RAG](./docs/Fluxo%20RAG.md).
+Para entender o papel de cada etapa dentro de um sistema RAG completo, consulte [Fluxo RAG](./docs/Fluxo%20RAG.md). Outros documentos disponíveis:
+
+| Documento | Conteúdo |
+| --- | --- |
+| [Fluxo RAG](./docs/Fluxo%20RAG.md) | O fluxo completo aplicado ao caso Titanic |
+| [Tutorial — Estratégias de Recuperação](./docs/Tutorial%20-%20Estrategias%20de%20Recuperacao.pdf) | Guia em PDF: lexical, híbrida, MMR, reranking, small-to-big, self-query, HyDE e ColBERT |
+| [Melhorias planejadas](./docs/Melhorias%20planejadas.md) | O que falta implementar, com prioridade e esforço |
+| [Kaggle Titanic](./docs/Kaggle%20Titanic.md) | Referência do dataset de passageiros |
 
 ## Tecnologias
 
@@ -252,6 +259,8 @@ embeddings-neo4j/
 │   ├── titanic/             # PDFs utilizados como fonte
 │   ├── ia/                  # Material de apoio (não indexado por padrão)
 │   ├── Fluxo RAG.md         # O fluxo RAG completo, aplicado ao caso Titanic
+│   ├── Melhorias planejadas.md          # Backlog de estratégias de recuperação
+│   ├── Tutorial - Estrategias de Recuperacao.pdf   # Guia (fonte: tutorial-recuperacao.html)
 │   └── Kaggle Titanic.md    # Referência do dataset de passageiros (não indexado)
 ├── src/
 │   ├── config.ts            # Configurações da aplicação

@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Estratégias de Recuperação em RAG</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm; }
+
+  :root {
+    --tinta: #1a1a1a;
+    --suave: #5a5a5a;
+    --linha: #d8d8d8;
+    --destaque: #0b5394;
+    --fundo-codigo: #f6f7f9;
+    --aviso: #8a5a00;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: "Segoe UI", Calibri, system-ui, sans-serif;
+    color: var(--tinta);
+    font-size: 10.5pt;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  h1, h2, h3 { line-height: 1.25; margin: 0 0 .4em; }
+  h1 { font-size: 26pt; letter-spacing: -.5px; }
+  h2 {
+    font-size: 15pt; margin-top: 1.6em; padding-bottom: .25em;
+    border-bottom: 2px solid var(--destaque); color: var(--destaque);
+    break-after: avoid;
+  }
+  h3 { font-size: 11.5pt; margin-top: 1.3em; break-after: avoid; }
+  p { margin: 0 0 .7em; }
+  ul, ol { margin: 0 0 .7em; padding-left: 1.3em; }
+  li { margin-bottom: .25em; }
+  code {
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: 9pt; background: var(--fundo-codigo);
+    padding: .08em .3em; border-radius: 3px;
+  }
+  pre {
+    background: var(--fundo-codigo); border: 1px solid var(--linha);
+    border-left: 3px solid var(--destaque); border-radius: 4px;
+    padding: .7em .9em; overflow: visible; white-space: pre-wrap;
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 8.6pt;
+    line-height: 1.45; margin: 0 0 .8em; break-inside: avoid;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 0 0 .9em;
+    font-size: 9.2pt; break-inside: avoid;
+  }
+  th, td { border: 1px solid var(--linha); padding: .38em .55em; text-align: left; vertical-align: top; }
+  th { background: #eef2f7; font-weight: 600; }
+  td.num, th.num { text-align: right; }
+
+  .capa { text-align: center; padding-top: 55mm; break-after: page; }
+  .capa h1 { font-size: 30pt; margin-bottom: .3em; }
+  .capa .sub { font-size: 13pt; color: var(--suave); margin-bottom: 2.5em; }
+  .capa .meta { font-size: 10pt; color: var(--suave); line-height: 1.9; }
+
+  .sumario { break-after: page; }
+  .sumario ol { padding-left: 1.1em; }
+  .sumario > ol > li { margin-bottom: .35em; font-weight: 600; }
+  .sumario ol ol { padding-left: 1.1em; margin-top: .2em; }
+  .sumario ol ol li { font-weight: 400; color: var(--suave); }
+
+  .nota, .aviso {
+    border-radius: 4px; padding: .6em .85em; margin: 0 0 .9em;
+    font-size: 9.6pt; break-inside: avoid;
+  }
+  .nota { background: #eef4fb; border-left: 3px solid var(--destaque); }
+  .aviso { background: #fdf6e7; border-left: 3px solid var(--aviso); }
+  .nota strong, .aviso strong { display: block; margin-bottom: .2em; }
+
+  .ficha { background: #fafafa; border: 1px solid var(--linha); border-radius: 4px;
+           padding: .55em .8em; margin: 0 0 .9em; font-size: 9.4pt; break-inside: avoid; }
+  .ficha div { margin-bottom: .15em; }
+  .ficha b { display: inline-block; min-width: 92px; color: var(--suave); font-weight: 600; }
+
+  .secao { break-before: page; }
+  .fim { color: var(--suave); font-size: 9pt; border-top: 1px solid var(--linha);
+         margin-top: 2em; padding-top: .6em; }
+</style>
+</head>
+<body>
+
+<div class="capa">
+  <h1>Estratégias de Recuperação em RAG</h1>
+  <div class="sub">Além da busca vetorial: um guia prático</div>
+  <div class="meta">
+    Laboratórios <b>embeddings-neo4j</b> e <b>titanic-graphrag</b><br>
+    Engenharia de IA Aplicada<br>
+    Setembro de 2026
+  </div>
+</div>
+
+<div class="sumario">
+<h2 style="margin-top:0">Sumário</h2>
+<ol>
+  <li>Por que a busca vetorial não basta
+    <ol><li>O que um embedding realmente mede</li><li>Uma medição no acervo do Titanic</li></ol>
+  </li>
+  <li>As que faltam
+    <ol>
+      <li>Busca lexical (BM25)</li>
+      <li>Busca híbrida</li>
+      <li>MMR — diversidade nos resultados</li>
+      <li>Reranking</li>
+    </ol>
+  </li>
+  <li>As mais sofisticadas
+    <ol>
+      <li>Small-to-big (Parent Document)</li>
+      <li>Self-query</li>
+      <li>HyDE</li>
+      <li>Multi-vetor e late interaction (ColBERT)</li>
+    </ol>
+  </li>
+  <li>Como escolher</li>
+</ol>
+</div>
+
+<h1 style="font-size:19pt">1. Por que a busca vetorial não basta</h1>
+
+<h3>1.1 O que um embedding realmente mede</h3>
+
+<p>Um modelo de embeddings transforma texto num vetor de números — 384 dimensões, no caso do <code>paraphrase-multilingual-MiniLM-L12-v2</code> usado nos laboratórios. Textos com sentido parecido ficam próximos nesse espaço; a busca consiste em achar os <code>k</code> vizinhos mais próximos da pergunta.</p>
+
+<p>Isso é <b>parecença</b>, não verdade nem filtro. A operação toda tem três passos: vetorizar, medir distância, ordenar. Não existe nenhum ponto em que o sistema conte, agrupe, verifique um predicado ou garanta exatidão.</p>
+
+<div class="nota">
+<strong>A consequência prática</strong>
+Busca vetorial nunca produz uma agregação. Ela devolve <code>k</code> documentos escolhidos por proximidade — e <code>k</code> é um número fixo, definido antes da pergunta existir.
+</div>
+
+<h3>1.2 Uma medição no acervo do Titanic</h3>
+
+<p>Para tornar isso concreto, os 891 passageiros do dataset do Kaggle foram convertidos em frases e embeddados como se fossem documentos. A pergunta: <i>"Quantas mulheres da terceira classe sobreviveram?"</i>. A resposta correta é <b>72</b>.</p>
+
+<table>
+<tr><th class="num">topK</th><th class="num">corretos</th><th class="num">errados</th><th class="num">precisão</th></tr>
+<tr><td class="num">3</td><td class="num">3</td><td class="num">0</td><td class="num">100%</td></tr>
+<tr><td class="num">10</td><td class="num">8</td><td class="num">2</td><td class="num">80%</td></tr>
+<tr><td class="num">50</td><td class="num">34</td><td class="num">16</td><td class="num">68%</td></tr>
+<tr><td class="num">72</td><td class="num">41</td><td class="num">31</td><td class="num">57%</td></tr>
+<tr><td class="num">200</td><td class="num">68</td><td class="num">132</td><td class="num">34%</td></tr>
+</table>
+
+<p>Nos primeiros resultados a busca acerta bem — ela é competente em achar quem <i>se parece</i> com a pergunta. Mas para capturar as 72 corretas seria preciso ler os <b>328 primeiros resultados</b>, arrastando 256 passageiros errados. Não existe corte que separe limpo, porque a similaridade decai suavemente: ela nunca soube o que é "mulher da terceira classe", só o que se parece com a frase da pergunta.</p>
+
+<p>Daí a divisão que os laboratórios adotam: perguntas com predicado e agregação vão para o Cypher; perguntas sobre significado vão para os embeddings. Este guia trata das estratégias que ficam <i>entre</i> esses dois extremos.</p>
+
+<div class="secao">
+<h1 style="font-size:19pt">2. As que faltam</h1>
+
+<h2>2.1 Busca lexical (BM25)</h2>
+
+<div class="ficha">
+  <div><b>Ideia</b> casar termos exatos, ponderados pela raridade</div>
+  <div><b>Resolve</b> nomes próprios, códigos, siglas, jargão</div>
+  <div><b>Custo</b> baixíssimo — índice invertido, sem GPU</div>
+  <div><b>No projeto</b> índice full-text do Neo4j</div>
+</div>
+
+<p>BM25 (<i>Best Matching 25</i>) é o algoritmo clássico de recuperação por palavra-chave, herdeiro do TF-IDF. Ele pontua um documento por três fatores:</p>
+
+<ul>
+  <li><b>Frequência do termo</b> — quantas vezes a palavra aparece no documento, com retorno decrescente: a décima ocorrência vale muito menos que a segunda.</li>
+  <li><b>Raridade do termo</b> — uma palavra que aparece em poucos documentos discrimina mais. "Carpathia" vale muito; "navio" vale pouco.</li>
+  <li><b>Tamanho do documento</b> — normaliza para que documentos longos não levem vantagem por acaso.</li>
+</ul>
+
+<p>É o oposto complementar do vetorial. Onde os embeddings brilham — sinonímia, paráfrase, tradução — o BM25 falha. E onde o BM25 brilha — um código de bilhete como <code>CA. 2343</code>, um nome como <i>Carpathia</i>, uma sigla — os embeddings falham, porque esses tokens não têm semântica a capturar.</p>
+
+<div class="aviso">
+<strong>O ponto cego atual do laboratório</strong>
+Uma pergunta como <i>"o que dizem sobre o Carpathia?"</i> depende hoje de sorte semântica. O nome do navio de resgate não tem significado que o embedding represente bem — ele é apenas uma sequência de tokens raros.
+</div>
+
+<h2>2.2 Busca híbrida</h2>
+
+<div class="ficha">
+  <div><b>Ideia</b> rodar vetorial e lexical, fundir os rankings</div>
+  <div><b>Resolve</b> o ponto cego de cada uma das duas</div>
+  <div><b>Custo</b> baixo — duas buscas em vez de uma</div>
+  <div><b>No projeto</b> <code>searchType: "hybrid"</code> — uma palavra</div>
+</div>
+
+<p>É o padrão de produção hoje. Cada mecanismo cobre a fraqueza do outro, e a única questão é como combinar duas listas ordenadas por escalas incomparáveis: similaridade de cosseno vai de 0 a 1, BM25 não tem teto.</p>
+
+<p>A resposta usual é <b>Reciprocal Rank Fusion</b> (RRF), que ignora os scores e usa apenas as posições:</p>
+
+<pre><code>score(d) = Σ  1 / (k + posição de d na lista i)
+          i
+
+com k ≈ 60</code></pre>
+
+<p>Um documento que aparece em 3º lugar nas duas listas vence um que foi 1º em uma e não apareceu na outra. A constante <code>k</code> amortece o peso das primeiras posições, evitando que um único ranking domine.</p>
+
+<p>No <code>Neo4jVectorStore</code> a mudança é mínima:</p>
+
+<pre><code>// src/config.ts
+searchType: "hybrid" as const,   // era "vector"
+keywordIndexName: "trechos_keyword",</code></pre>
+
+<p>O driver passa a criar um índice full-text além do vetorial e a combinar os resultados. Vale conferir como ele funde os rankings — a implementação é simples e pode não usar RRF.</p>
+
+<h2>2.3 MMR — diversidade nos resultados</h2>
+
+<div class="ficha">
+  <div><b>Ideia</b> resultados relevantes <i>e diferentes entre si</i></div>
+  <div><b>Resolve</b> top-k com três variações do mesmo trecho</div>
+  <div><b>Custo</b> baixo — cálculo sobre vetores já recuperados</div>
+  <div><b>No projeto</b> exige implementação manual</div>
+</div>
+
+<p>Com <code>chunkOverlap: 200</code>, trechos vizinhos compartilham 200 caracteres. Um top-3 pode trazer praticamente o mesmo conteúdo três vezes, desperdiçando o orçamento de contexto da LLM e escondendo perspectivas alternativas.</p>
+
+<p><i>Maximal Marginal Relevance</i> escolhe iterativamente, penalizando quem se parece demais com o que já foi escolhido:</p>
+
+<pre><code>MMR = argmax [ λ · sim(d, pergunta) − (1−λ) · max sim(d, d_já_escolhido) ]
+       d                                        d_já
+
+λ = 1   → só relevância (equivale à busca comum)
+λ = 0,5 → equilíbrio usual
+λ = 0   → só diversidade</code></pre>
+
+<p>O procedimento: recupere um top-20, escolha o primeiro por relevância pura, e vá acrescentando o candidato que maximiza a fórmula até ter 3.</p>
+
+<div class="aviso">
+<strong>Atenção na implementação</strong>
+O <code>Neo4jVectorStore</code> não implementa <code>maxMarginalRelevanceSearch</code>. Seria preciso recuperar os vetores dos candidatos e aplicar o algoritmo manualmente.
+</div>
+
+<h2>2.4 Reranking</h2>
+
+<div class="ficha">
+  <div><b>Ideia</b> reavaliar os candidatos com um modelo mais preciso</div>
+  <div><b>Resolve</b> ordenação ruim entre trechos parecidos</div>
+  <div><b>Custo</b> médio — um modelo por par (pergunta, trecho)</div>
+  <div><b>No projeto</b> <code>Xenova/ms-marco-MiniLM-L-6-v2</code>, local</div>
+</div>
+
+<p>A diferença técnica é a arquitetura. A busca vetorial usa um <b>bi-encoder</b>: pergunta e documento são vetorizados <i>separadamente</i>, e só no fim se comparam dois vetores. Isso permite pré-calcular todos os embeddings dos documentos — é o que torna a busca rápida — mas o documento nunca "vê" a pergunta.</p>
+
+<p>Um <b>cross-encoder</b> recebe os dois juntos, num único texto, e produz uma pontuação de relevância. É muito mais preciso, porque a atenção do modelo relaciona cada palavra da pergunta com cada palavra do trecho. É também caro demais para rodar sobre milhares de documentos — daí a arquitetura em dois estágios:</p>
+
+<pre><code>Busca vetorial/híbrida  →  20 candidatos   (rápido, impreciso)
+Cross-encoder           →  reordena os 20  (lento, preciso)
+Seleção final           →  3 melhores</code></pre>
+
+<div class="nota">
+<strong>Um caso real do acervo</strong>
+Para <i>"O Titanic foi avisado sobre icebergs?"</i>, a busca vetorial devolveu em 2º lugar, com 87,1% — quase empatado com o 1º —, um trecho sobre o valor do seguro pago às vítimas. Ele pontuou alto por compartilhar vocabulário e assunto geral, não por conter a resposta. É exatamente o erro que um reranker corrige.
+</div>
+</div>
+
+<div class="secao">
+<h1 style="font-size:19pt">3. As mais sofisticadas</h1>
+
+<h2>3.1 Small-to-big (Parent Document)</h2>
+
+<div class="ficha">
+  <div><b>Ideia</b> embedar trechos pequenos, devolver o bloco grande</div>
+  <div><b>Resolve</b> o dilema do tamanho do chunk</div>
+  <div><b>Custo</b> médio — exige hierarquia entre trechos</div>
+  <div><b>No projeto</b> natural num banco de grafos</div>
+</div>
+
+<p>Existe uma tensão que nenhum valor de <code>chunkSize</code> resolve:</p>
+
+<table>
+<tr><th>Trecho pequeno</th><th>Trecho grande</th></tr>
+<tr>
+  <td>Vetor concentrado num assunto só, logo a busca acerta mais.<br>Mas o texto recuperado pode não bastar para responder.</td>
+  <td>Contexto completo para a LLM responder.<br>Mas o vetor é a média de vários assuntos, e a busca fica difusa.</td>
+</tr>
+</table>
+
+<p>A saída é desacoplar <b>o que se busca</b> do <b>que se devolve</b>: indexe trechos de 200 caracteres, e quando um deles for encontrado, entregue à LLM o parágrafo ou a página que o contém.</p>
+
+<p>Em bancos vetoriais comuns isso é um artifício com identificadores de pai guardados nos metadados. Num grafo, é estrutura de primeira classe:</p>
+
+<pre><code>(:Trecho {texto, embedding})-[:PARTE_DE]->(:Pagina)-[:PARTE_DE]->(:Documento)</code></pre>
+
+<pre><code>CALL db.index.vector.queryNodes('trechos_index', 20, $vetorDaPergunta)
+YIELD node AS trecho, score
+MATCH (trecho)-[:PARTE_DE]->(pagina:Pagina)
+RETURN DISTINCT pagina.texto, max(score) AS score
+ORDER BY score DESC LIMIT 3</code></pre>
+
+<p>É um bom argumento a favor de usar Neo4j como vector store: a hierarquia do documento vira grafo, e a consulta que busca pequeno e devolve grande é uma travessia de uma aresta.</p>
+
+<h2>3.2 Self-query</h2>
+
+<div class="ficha">
+  <div><b>Ideia</b> a LLM extrai filtros estruturados da pergunta</div>
+  <div><b>Resolve</b> perguntas que misturam filtro e significado</div>
+  <div><b>Custo</b> uma chamada de LLM por pergunta</div>
+  <div><b>No projeto</b> os metadados necessários já existem</div>
+</div>
+
+<p>Muitas perguntas carregam, implicitamente, um filtro e uma busca semântica ao mesmo tempo:</p>
+
+<pre><code>"O que a análise de riscos diz sobre velocidade?"
+        ↓
+filtro   : fileName = "O Caso Titanic.pdf"
+semântica: "velocidade"</code></pre>
+
+<p>Sem self-query, a palavra "análise de riscos" entra no vetor da pergunta e apenas <i>enviesa</i> o resultado — sem garantia de que os trechos venham daquele documento. Com self-query, ela vira um <code>WHERE</code> que exclui todo o resto.</p>
+
+<p>É o mesmo princípio do <i>text2cypher</i> do <code>titanic-graphrag</code>, aplicado aos metadados dos trechos em vez das propriedades dos passageiros. Os campos necessários — <code>fileName</code>, <code>pageNumber</code>, <code>totalPages</code> — já são gravados em cada nó.</p>
+
+<p>Num sistema multiempresa, esse filtro deixa de ser conveniência e vira <b>segurança</b>: <code>empresa_id</code> e <code>permissao</code> precisam ser aplicados antes da busca, nunca depois.</p>
+
+<h2>3.3 HyDE — Hypothetical Document Embeddings</h2>
+
+<div class="ficha">
+  <div><b>Ideia</b> embedar uma resposta inventada, não a pergunta</div>
+  <div><b>Resolve</b> perguntas curtas, vagas ou mal formuladas</div>
+  <div><b>Custo</b> uma chamada de LLM por pergunta</div>
+  <div><b>No projeto</b> +15 s de latência com o modelo gratuito atual</div>
+</div>
+
+<p>A intuição por trás é uma assimetria fácil de esquecer: <b>perguntas e documentos não se parecem</b>. Uma pergunta é curta e interrogativa; um trecho de livro é longo e afirmativo. Ao comparar o vetor de uma com o vetor do outro, compara-se coisas de naturezas diferentes.</p>
+
+<p>O HyDE contorna isso pedindo à LLM que escreva uma resposta plausível — mesmo que inventada — e usando <i>essa</i> resposta como consulta:</p>
+
+<pre><code>Pergunta: "botes?"
+        ↓  LLM redige uma resposta hipotética
+"O Titanic dispunha de botes salva-vidas em número insuficiente
+ para todos os passageiros e tripulantes a bordo."
+        ↓  este texto é embeddado e usado na busca
+Trechos recuperados</code></pre>
+
+<div class="nota">
+<strong>Por que funciona mesmo se a resposta inventada estiver errada</strong>
+Ela não é mostrada a ninguém: serve só como consulta. O que importa é que tenha o <i>formato</i> e o <i>vocabulário</i> de um trecho de documento, aproximando-se da região certa do espaço vetorial.
+</div>
+
+<h2>3.4 Multi-vetor e late interaction (ColBERT)</h2>
+
+<div class="ficha">
+  <div><b>Ideia</b> vários vetores por documento, comparados token a token</div>
+  <div><b>Resolve</b> perda de detalhe do vetor único</div>
+  <div><b>Custo</b> armazenamento uma ordem de grandeza maior</div>
+  <div><b>No projeto</b> estudo, não próximo passo</div>
+</div>
+
+<p>Resumir um trecho de 1000 caracteres em 384 números descarta muita coisa. Um trecho que fala de velocidade, icebergs e binóculos vira a <i>média</i> desses três assuntos — e essa média pode não estar perto de nenhum deles.</p>
+
+<p>O ColBERT guarda <b>um vetor por token</b> e, na busca, para cada token da pergunta encontra o token mais parecido do documento, somando esses máximos:</p>
+
+<pre><code>score(pergunta, doc) = Σ  max  sim(t_pergunta, t_doc)
+                       t∈p  t∈d</code></pre>
+
+<p>Chama-se <i>late interaction</i> porque a comparação entre pergunta e documento acontece tarde, no momento da busca — diferente do bi-encoder (que comprime antes) e do cross-encoder (que só funciona sobre poucos candidatos). É um meio-termo: quase a precisão de um cross-encoder, com a possibilidade de pré-computar os vetores.</p>
+
+<p>O preço é o armazenamento: 1000 tokens viram 1000 vetores, não 1. Para 303 trechos isso seria administrável; para um acervo corporativo, é uma decisão de infraestrutura.</p>
+</div>
+
+<div class="secao">
+<h1 style="font-size:19pt">4. Como escolher</h1>
+
+<p>A pergunta certa não é "qual é a melhor", e sim "qual é o modo de falha que estou vendo".</p>
+
+<table>
+<tr><th>Sintoma observado</th><th>Estratégia indicada</th></tr>
+<tr><td>Não acha nomes próprios, códigos ou siglas</td><td>Lexical / híbrida</td></tr>
+<tr><td>Os três resultados dizem quase a mesma coisa</td><td>MMR</td></tr>
+<tr><td>O trecho certo aparece, mas em 3º lugar</td><td>Reranking</td></tr>
+<tr><td>Acha o trecho certo, mas falta contexto para responder</td><td>Small-to-big</td></tr>
+<tr><td>Traz trechos do documento errado</td><td>Self-query</td></tr>
+<tr><td>Vai mal com perguntas curtas ou vagas</td><td>HyDE</td></tr>
+<tr><td>Responde com número errado, mas plausível</td><td>Agregação (Cypher), não RAG</td></tr>
+</table>
+
+<h3>Ordem de implementação sugerida</h3>
+
+<ol>
+  <li><b>Híbrida</b> — uma palavra no config, ganho imediato e mensurável.</li>
+  <li><b>Reranking</b> — corrige um problema já demonstrado com dados reais do acervo.</li>
+  <li><b>Small-to-big</b> — resolve o dilema do <code>chunkSize</code> de vez.</li>
+  <li><b>Self-query</b> — necessário assim que houver múltiplos documentos ou permissões.</li>
+  <li>O restante, conforme o interesse de estudo.</li>
+</ol>
+
+<div class="nota">
+<strong>Meça antes e depois</strong>
+Toda estratégia deste guia é uma hipótese até ser medida no seu acervo. Monte um conjunto de dez a vinte perguntas com a resposta esperada conhecida, e acompanhe uma métrica simples — em que posição aparece o trecho correto. Sem isso, "melhorar a recuperação" vira opinião.
+</div>
+
+<p class="fim">Documento gerado para os laboratórios <b>embeddings-neo4j</b> e <b>titanic-graphrag</b>. As medições citadas foram obtidas no próprio acervo do projeto: cinco PDFs sobre o Titanic e os 891 passageiros do conjunto de treino da competição do Kaggle.</p>
+</div>
+
+</body>
+</html>
