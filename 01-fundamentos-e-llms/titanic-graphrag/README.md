@@ -67,6 +67,8 @@ Ambos são modelos de **raciocínio**: gastam centenas de tokens "pensando" ante
 
 Como cada pergunta faz até três chamadas (classificar, gerar Cypher, redigir a resposta), espere entre 30 e 60 segundos por resposta. Com uma chave paga, um modelo sem raciocínio responde em poucos segundos.
 
+Tempos medidos numa pergunta pela rota do grafo: classificação 4,5 s, geração do Cypher 12,1 s, consulta ao Neo4j 0,1 s e redação da resposta 15,0 s — 31,7 s no total. O banco é a parte rápida; o gargalo é a LLM.
+
 Se aparecer `404 This model is unavailable for free`, o modelo saiu da oferta gratuita: consulte <https://openrouter.ai/models?max_price=0> e atualize `NLP_MODEL`.
 
 ### A chave do OpenRouter
@@ -123,18 +125,20 @@ O total se ajusta assim que a rota é decidida: quatro etapas pelo grafo (classi
 
 A barra só aparece em terminal interativo. Com a saída redirecionada — para um arquivo ou num pipe — ela fica em silêncio, para não encher o log de sequências de escape.
 
-Passados 45 segundos na mesma etapa, ela acrescenta . O contador subindo indica que o processo está vivo, aguardando a rede; se ele congelar, aí sim houve travamento.
+Passados 45 segundos na mesma etapa, ela acrescenta `(mais lento que o normal)`. O contador subindo indica que o processo está vivo, aguardando a rede; se ele congelar, aí sim houve travamento.
 
 ### Limites de tempo
 
-Duas configurações distintas em :
+Duas configurações distintas em `CONFIG.openRouter`:
 
 | Opção | Padrão | Alcance |
 | --- | ---: | --- |
-|  | 45 s | cada tentativa isolada |
-|  | 60 s | a etapa inteira, retentativas incluídas |
+| `timeoutMs` | 45 s | cada tentativa isolada |
+| `prazoTotalMs` | 60 s | a etapa inteira, retentativas incluídas |
 
-O SDK da OpenAI usa **dez minutos** de timeout por padrão, e cada retentativa recomeça essa contagem. Com , o tempo total é  — muito além do que o limite por tentativa sugere. Por isso cada chamada recebe também um , que aborta a requisição de verdade e cobre o passo inteiro.
+O SDK da OpenAI usa **dez minutos** de timeout por padrão, e cada retentativa recomeça essa contagem. Com `maxRetries`, o tempo total é `(1 + maxRetries) × timeoutMs` — muito além do que o limite por tentativa sugere.
+
+Por isso cada chamada recebe também um `AbortSignal.timeout(prazoTotalMs)`, que aborta a requisição de verdade e cobre o passo inteiro. Sem ele, um limite nominal de 90 s com `maxRetries: 2` deixava o terminal preso por até 270 s.
 
 ## Log das interações
 
