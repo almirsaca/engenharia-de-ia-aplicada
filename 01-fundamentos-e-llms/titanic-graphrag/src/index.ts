@@ -13,6 +13,7 @@ import { executar, imprimirTabela, rodarAnalises } from "./analises.ts";
 import { classificar, criarLlm, gerarCypher, responder, validarCypher } from "./router.ts";
 import { medir, novoRegistro, salvar, ARQUIVO_LOG } from "./log.ts";
 import { formatarTrecho } from "../../compartilhado/formatacao.ts";
+import { Progresso, comEtapa } from "../../compartilhado/progresso.ts";
 
 const driver = neo4j.driver(
     CONFIG.neo4j.uri,
@@ -102,34 +103,40 @@ try {
         const registro = novoRegistro(pergunta, CONFIG.openRouter.model);
         console.log(`🆔 ${registro.id}`);
 
+        // A rota do grafo tem quatro etapas; a de documentos, tres. O total e
+        // ajustado assim que a classificacao decide o caminho.
+        const progresso = new Progresso(4);
+
         if (llm) {
             try {
-                const { rota, bruto } = await medir(
+                const { rota, bruto } = await comEtapa(progresso, "classificando a pergunta", () => medir(
                     registro, "classificacao",
                     () => classificar(llm!, pergunta),
                     v => ({ bruto: v.bruto, resultado: v.rota }),
-                );
+                ));
                 registro.rota = rota;
-                console.log(`🧭 Rota: ${rota === "grafo" ? "GRAFO (Cypher)" : "DOCUMENTOS (busca vetorial)"}`);
+                progresso.ajustarTotal(rota === "grafo" ? 4 : 3);
+                progresso.log(`🧭 Rota: ${rota === "grafo" ? "GRAFO (Cypher)" : "DOCUMENTOS (busca vetorial)"}`);
                 if (bruto.trim().toLowerCase() !== rota) {
-                    console.log(`   (a LLM respondeu: ${JSON.stringify(bruto.slice(0, 120))})`);
+                    progresso.log(`   (a LLM respondeu: ${JSON.stringify(bruto.slice(0, 120))})`);
                 }
 
                 let contexto: string;
                 if (rota === "grafo") {
-                    const { cypher } = await medir(
+                    const { cypher } = await comEtapa(progresso, "gerando a consulta Cypher", () => medir(
                         registro, "cypher",
                         () => gerarCypher(llm!, pergunta),
                         v => ({ bruto: v.bruto, resultado: v.cypher }),
-                    );
+                    ));
                     validarCypher(cypher);
-                    console.log(`\n🔍 Cypher gerado:\n${cypher.split("\n").map(l => "      " + l.trim()).join("\n")}\n`);
+                    progresso.log(`\n🔍 Cypher gerado:\n${cypher.split("\n").map(l => "      " + l.trim()).join("\n")}\n`);
 
-                    const linhas = await medir(
+                    const linhas = await comEtapa(progresso, "consultando o grafo", () => medir(
                         registro, "consulta",
                         () => executar(driver, cypher),
                         v => ({ resultado: v }),
-                    );
+                    ));
+                    progresso.limpar();
                     imprimirTabela(linhas);
                     // Sem dizer de onde vem o resultado, a LLM trata o JSON como
                     // dado solto e responde que o contexto é insuficiente.
@@ -142,11 +149,12 @@ try {
                         `Resultado:\n${JSON.stringify(linhas)}`,
                     ].join("\n");
                 } else {
-                    const resultados = await medir(
+                    const resultados = await comEtapa(progresso, "buscando nos documentos", () => medir(
                         registro, "busca",
                         () => buscarNosDocumentos(pergunta),
                         v => ({ resultado: v.map(([doc, score]) => ({ origem: origemDe(doc), score })) }),
-                    );
+                    ));
+                    progresso.limpar();
                     exibirTrechos(resultados);
                     contexto = resultados
                         .map(([doc]) => `[${origemDe(doc)}]\n${doc.pageContent.replace(/\s+/g, " ").trim()}`)
@@ -155,17 +163,19 @@ try {
 
                 registro.etapas["contexto"] = { ms: 0, resultado: contexto };
 
-                const texto = await medir(
+                const texto = await comEtapa(progresso, "redigindo a resposta", () => medir(
                     registro, "resposta",
                     () => responder(llm!, pergunta, contexto),
                     v => ({ bruto: v }),
-                );
+                ));
                 registro.resposta = texto;
                 console.log(`\n💬 ${texto}\n`);
                 await salvar(registro);
                 continue;
             } catch (erro) {
+                progresso.encerrar();
                 registro.erro = erro instanceof Error ? erro.message : String(erro);
+                progresso.encerrar();
                 if (ehErroDeAutenticacao(erro)) {
                     console.error(`\n❌ O OpenRouter recusou a chave: ${erro instanceof Error ? erro.message : erro}`);
                     console.error("   Gere uma nova em https://openrouter.ai/keys e atualize a variável");
@@ -187,11 +197,13 @@ try {
         console.log("🧭 Modo sem LLM: busca vetorial nos documentos.");
         console.log("   (para perguntas sobre os passageiros, use o comando 'analises')");
         registro.rota = "documentos";
-        const semLlm = await medir(
+        progresso.ajustarTotal(1);
+        const semLlm = await comEtapa(progresso, "buscando nos documentos", () => medir(
             registro, "busca",
             () => buscarNosDocumentos(pergunta),
             v => ({ resultado: v.map(([doc, score]) => ({ origem: origemDe(doc), score })) }),
-        );
+        ));
+        progresso.encerrar();
         exibirTrechos(semLlm);
         await salvar(registro);
         console.log();

@@ -111,6 +111,15 @@ No prompt:
 | `analises` | roda as sete consultas Cypher prontas |
 | `sair` ou `Ctrl+D` | encerra |
 
+## Barra de progresso
+
+Cada pergunta faz até quatro etapas e pode levar de 30 a 60 segundos com os modelos gratuitos. Enquanto isso, uma barra mostra em que ponto está:
+
+\
+O total se ajusta assim que a rota é decidida: quatro etapas pelo grafo (classificar, gerar Cypher, consultar, responder) e três pelos documentos (classificar, buscar, responder).
+
+A barra só aparece em terminal interativo. Com a saída redirecionada — para um arquivo ou num pipe — ela fica em silêncio, para não encher o log de sequências de escape.
+
 ## Log das interações
 
 Toda pergunta recebe um **id de seis dígitos**, exibido no terminal e gravado em `log/interacoes.jsonl` (uma interação por linha, fora do controle de versão).
@@ -256,7 +265,9 @@ titanic-graphrag/
 │   └── index.ts          # CLI
 ├── .npmrc                # legacy-peer-deps (ver Instalação)
 │
-└── ../compartilhado/formatacao.ts   # formatação de trechos, usada pelos dois laboratórios
+└── ../compartilhado/
+    ├── formatacao.ts     # formatação de trechos, usada pelos dois laboratórios
+    └── progresso.ts      # barra de progresso para operações demoradas
 ├── package.json
 └── tsconfig.json
 ```
