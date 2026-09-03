@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "main": "src/index.ts",
   "scripts": {
-    "start": "node --env-file .env --experimental-strip-types src/index.ts",
+    "start": "node --no-warnings --env-file .env --experimental-strip-types src/index.ts",
     "dev": "node --no-warnings --env-file .env --watch --experimental-strip-types src/index.ts",
-    "debug": "node --inspect-brk=9229 --env-file .env --experimental-strip-types src/index.ts",
+    "debug": "node --no-warnings --inspect-brk=9229 --env-file .env --experimental-strip-types src/index.ts",
     "infra:up": "docker-compose up -d --wait",
     "infra:down": "docker-compose down --volumes"
   },

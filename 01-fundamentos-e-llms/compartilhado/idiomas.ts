@@ -44,6 +44,21 @@ export interface Mensagens {
     chaveRecusada: (msg: string) => string;
     prazoExcedido: (s: number) => string;
     registrado: (id: string) => string;
+
+    /** Mensagens exclusivas do laboratório embeddings-neo4j. */
+    embeddings: {
+        titulo: string;
+        removendo: string;
+        removidos: string;
+        indexados: (feitos: number, total: number) => string;
+        populada: (s: string) => string;
+        etapaBusca: string;
+        instrucoes: string;
+        encontrados: (n: number) => string;
+        perguntaInvalida: string;
+        encerrandoBusca: string;
+        concluido: string;
+    };
 }
 
 const PT: Mensagens = {
@@ -81,6 +96,20 @@ const PT: Mensagens = {
     chaveRecusada: msg => `❌ O OpenRouter recusou a chave: ${msg}`,
     prazoExcedido: s => `   A etapa passou de ${s}s e foi abortada.`,
     registrado: id => `   Interação registrada como ${id} — veja com: npm run log -- ${id}`,
+
+    embeddings: {
+        titulo: "🚀 Inicializando sistema de Embeddings com Neo4j...",
+        removendo: "🗑️  Removendo todos os documentos existentes...",
+        removidos: "✅ Documentos removidos com sucesso",
+        indexados: (f, t) => `✅ Indexados ${f}/${t} trechos`,
+        populada: s => `✅ Base de dados populada em ${s}s!`,
+        etapaBusca: "🔍 ETAPA 2: Busca interativa por similaridade",
+        instrucoes: "Digite uma pergunta, 'idioma' para trocar, ou 'sair' para encerrar.",
+        encontrados: n => `📄 Encontrados ${n} trechos relevantes:`,
+        perguntaInvalida: "⚠️  Digite uma pergunta válida.",
+        encerrandoBusca: "👋 Encerrando a busca...",
+        concluido: "✅ Processamento concluído com sucesso!",
+    },
 };
 
 const EN: Mensagens = {
@@ -118,6 +147,20 @@ const EN: Mensagens = {
     chaveRecusada: msg => `❌ OpenRouter rejected the key: ${msg}`,
     prazoExcedido: s => `   The step exceeded ${s}s and was aborted.`,
     registrado: id => `   Interaction logged as ${id} — view with: npm run log -- ${id}`,
+
+    embeddings: {
+        titulo: "🚀 Starting the Embeddings system with Neo4j...",
+        removendo: "🗑️  Removing all existing documents...",
+        removidos: "✅ Documents removed successfully",
+        indexados: (f, t) => `✅ Indexed ${f}/${t} excerpts`,
+        populada: s => `✅ Database populated in ${s}s!`,
+        etapaBusca: "🔍 STEP 2: Interactive similarity search",
+        instrucoes: "Type a question, 'idioma' to switch language, or 'sair' to quit.",
+        encontrados: n => `📄 Found ${n} relevant excerpts:`,
+        perguntaInvalida: "⚠️  Please type a valid question.",
+        encerrandoBusca: "👋 Ending the search...",
+        concluido: "✅ Processing completed successfully!",
+    },
 };
 
 export const CATALOGO: Record<Idioma, Mensagens> = { pt: PT, en: EN };

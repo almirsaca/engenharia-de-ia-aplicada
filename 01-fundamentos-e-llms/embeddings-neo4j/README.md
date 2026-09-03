@@ -231,6 +231,8 @@ Após os documentos serem indexados, digite perguntas no terminal:
 
 Digite `sair` — ou pressione `Ctrl+D` — para encerrar o prompt e fechar a conexão com o Neo4j.
 
+A aplicação pergunta o idioma ao iniciar — português ou inglês —, e o comando `idioma` troca durante a sessão. A escolha afeta apenas os rótulos da interface: os trechos são exibidos na língua original do documento, sem tradução, para não falsear a fonte. O laboratório [titanic-graphrag](../titanic-graphrag/) usa o mesmo catálogo e traduz também a resposta gerada.
+
 ### Como ler o percentual
 
 O Neo4j não devolve o cosseno cru: ele normaliza para `(1 + cos) / 2`, de modo que o valor caiba entre 0 e 1. A consequência é que **a escala não começa no zero**:

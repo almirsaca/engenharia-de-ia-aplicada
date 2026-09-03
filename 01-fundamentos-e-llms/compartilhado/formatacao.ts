@@ -26,9 +26,15 @@ export function formatarTrecho(conteudo: string, limite: number = 200): string {
     return `${limpo.slice(0, limite)}...`;
 }
 
-/** Barra de dez blocos com o percentual, para a similaridade de cosseno (0 a 1). */
-export function formatarScore(score: number): string {
+/**
+ * Barra de dez blocos com o percentual, para a similaridade de cosseno (0 a 1).
+ *
+ * O rótulo é parâmetro porque a interface é bilíngue. Lembre que o Neo4j
+ * normaliza o cosseno para (1 + cos) / 2: 50% aqui significa vetores
+ * ortogonais, não meia relação.
+ */
+export function formatarScore(score: number, rotulo = "de similaridade"): string {
     const blocos = Math.min(10, Math.max(0, Math.round(score * 10)));
     const barra = "█".repeat(blocos) + "░".repeat(10 - blocos);
-    return `${barra} ${(score * 100).toFixed(1)}% de similaridade`;
+    return `${barra} ${(score * 100).toFixed(1)}% ${rotulo}`;
 }
