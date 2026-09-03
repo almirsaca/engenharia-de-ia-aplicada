@@ -84,8 +84,41 @@ export function normalizarPagina(texto: string, repetidas: Set<string> = new Set
     return partes.join("\n\n");
 }
 
+/**
+ * Reúne frases partidas pela quebra de página.
+ *
+ * Uma frase iniciada no fim de uma página termina no começo da seguinte. Como
+ * cada página é processada isoladamente, o começo ficaria órfão — um trecho
+ * abrindo com "também embarcam nesse lugar." sem o sujeito, que ficou na
+ * página anterior.
+ *
+ * O fragmento é movido para a página onde a frase **começa**, mantendo a
+ * citação de página coerente com a origem da informação.
+ */
+export function costurarPaginas(paginas: string[]): string[] {
+    for (let i = 0; i < paginas.length - 1; i++) {
+        const atual = paginas[i]!;
+        const seguinte = paginas[i + 1]!;
+        if (!atual || !seguinte) continue;
+
+        const partesAtual = atual.split("\n\n");
+        const partesSeguinte = seguinte.split("\n\n");
+        const ultima = partesAtual.at(-1)!;
+        const primeira = partesSeguinte[0]!;
+
+        // Só costura quando a página anterior termina sem pontuação final e a
+        // seguinte começa em minúscula — a assinatura de uma frase interrompida.
+        if (FIM_DE_FRASE.test(ultima) || !/^[\p{Ll}\d]/u.test(primeira)) continue;
+
+        partesAtual[partesAtual.length - 1] = `${ultima} ${primeira}`;
+        paginas[i] = partesAtual.join("\n\n");
+        paginas[i + 1] = partesSeguinte.slice(1).join("\n\n");
+    }
+    return paginas;
+}
+
 /** Normaliza todas as páginas de um documento, compartilhando a detecção de repetidas. */
 export function normalizarDocumento(paginas: readonly string[]): string[] {
     const repetidas = detectarRepetidas(paginas);
-    return paginas.map(p => normalizarPagina(p, repetidas));
+    return costurarPaginas(paginas.map(p => normalizarPagina(p, repetidas)));
 }

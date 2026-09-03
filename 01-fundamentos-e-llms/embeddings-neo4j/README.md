@@ -229,7 +229,36 @@ Após os documentos serem indexados, digite perguntas no terminal:
 ❓ Pergunta: sair
 ```
 
-A barra e o percentual indicam a similaridade de cosseno entre a pergunta e o trecho. Digite `sair` — ou pressione `Ctrl+D` — para encerrar o prompt e fechar a conexão com o Neo4j.
+Digite `sair` — ou pressione `Ctrl+D` — para encerrar o prompt e fechar a conexão com o Neo4j.
+
+### Como ler o percentual
+
+O Neo4j não devolve o cosseno cru: ele normaliza para `(1 + cos) / 2`, de modo que o valor caiba entre 0 e 1. A consequência é que **a escala não começa no zero**:
+
+| Exibido | Cosseno real | Significado |
+| ---: | ---: | --- |
+| 100% | 1,00 | textos idênticos em sentido |
+| 87% | 0,73 | forte relação |
+| 77% | 0,54 | relação moderada |
+| **50%** | **0,00** | **vetores ortogonais — nenhuma relação** |
+| 0% | −1,00 | sentidos opostos |
+
+Um resultado com "60% de similaridade" corresponde a um cosseno de apenas 0,20. Percentuais abaixo de uns 70% costumam indicar que o acervo não tem a resposta.
+
+### Por que sempre voltam três resultados
+
+A busca vetorial devolve os `k` vizinhos mais próximos, **sempre**. Não existe o conceito de "não encontrei": mesmo uma pergunta fora do assunto recebe os três trechos menos distantes.
+
+Medindo cinco perguntas respondíveis contra cinco sem resposta no acervo, os melhores scores foram:
+
+| Perguntas | Faixa do melhor score |
+| --- | --- |
+| respondíveis | 73,7% a 89,6% |
+| sem resposta no acervo | 58,1% a 77,1% |
+
+As faixas **se sobrepõem**. *"Tinha pinga e cachaça?"* pontuou 77,1%, acima de *"quem era o capitão?"*, que pontuou 73,7% e é legítima. Nenhum limiar fixo separa as duas situações, porque a similaridade mede **assunto**, não **respondibilidade**: perguntar sobre bebidas a bordo é topicamente pertinente ao Titanic, ainda que nenhum documento trate disso.
+
+A defesa que funciona não está na recuperação, e sim na geração: o prompt instrui a LLM a responder apenas com o contexto e a admitir quando ele não basta. É o que o laboratório [titanic-graphrag](../titanic-graphrag/) faz — e funciona, como se vê na resposta a essa mesma pergunta sobre cachaça. Reranking com *cross-encoder* seria o passo seguinte; ver o [tutorial de estratégias de recuperação](./docs/Tutorial%20-%20Estrategias%20de%20Recuperacao.pdf).
 
 O Neo4j Browser fica disponível em [http://localhost:7474](http://localhost:7474). A conexão Bolt utilizada pela aplicação está disponível na porta `7687`.
 
