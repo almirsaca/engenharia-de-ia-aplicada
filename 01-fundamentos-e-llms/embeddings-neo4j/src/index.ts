@@ -4,7 +4,7 @@ import { DocumentProcessor } from "../documentProcessor.ts";
 import { type PretrainedOptions } from "@huggingface/transformers";
 import { Neo4jVectorStore } from "@langchain/community/vectorstores/neo4j_vector";
 import { displayResults } from "./util.ts";
-import { SEM_LIMITE } from "../../compartilhado/formatacao.ts";
+import { SEM_LIMITE, SEPARADOR } from "../../compartilhado/formatacao.ts";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
@@ -71,6 +71,7 @@ try {
     questionPrompt.on("close", () => { entradaFechada = true })
 
     while (!entradaFechada) {
+        console.log(SEPARADOR)
         const resposta = await questionPrompt.question("❓ Pergunta: ")
         if (entradaFechada) break
 
@@ -86,10 +87,6 @@ try {
             continue
         }
 
-        console.log(`\n${'='.repeat(80)}`);
-        console.log(`📌 PERGUNTA: ${question}`);
-        console.log('='.repeat(80));
-
         const results = await _neo4jVectorStore.similaritySearchWithScore(
             question,
             CONFIG.similarity.topK
@@ -99,7 +96,7 @@ try {
 
 
     // Cleanup
-    console.log(`\n${'='.repeat(80)}`);
+    console.log(`\n${SEPARADOR}`);
     console.log("✅ Processamento concluído com sucesso!\n");
 
 } catch (error) {

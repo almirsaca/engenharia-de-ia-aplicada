@@ -9,6 +9,9 @@
 /** Passe como limite para imprimir o trecho inteiro, sem cortar. */
 export const SEM_LIMITE = -1;
 
+/** Régua impressa antes de cada pergunta, para separar visualmente as interações. */
+export const SEPARADOR = "=".repeat(80);
+
 /**
  * Colapsa o espaçamento do trecho e corta no limite informado.
  *

@@ -12,7 +12,7 @@ import { carregarGrafo, contarPassageiros } from "./loadGraph.ts";
 import { executar, imprimirTabela, rodarAnalises } from "./analises.ts";
 import { classificar, criarLlm, gerarCypher, responder, validarCypher } from "./router.ts";
 import { medir, novoRegistro, salvar, ARQUIVO_LOG } from "./log.ts";
-import { formatarTrecho } from "../../compartilhado/formatacao.ts";
+import { formatarTrecho, SEPARADOR } from "../../compartilhado/formatacao.ts";
 import { Progresso, comEtapa } from "../../compartilhado/progresso.ts";
 
 const driver = neo4j.driver(
@@ -85,6 +85,7 @@ try {
     prompt.on("close", () => { entradaFechada = true });
 
     while (!entradaFechada) {
+        console.log(SEPARADOR);
         const resposta = await prompt.question("❓ Pergunta: ");
         if (entradaFechada) break;
 
@@ -98,10 +99,8 @@ try {
             continue;
         }
 
-        console.log(`\n${"=".repeat(80)}`);
-
         const registro = novoRegistro(pergunta, CONFIG.openRouter.model);
-        console.log(`🆔 ${registro.id}`);
+        console.log(`\n🆔 ${registro.id}`);
 
         // A rota do grafo tem quatro etapas; a de documentos, tres. O total e
         // ajustado assim que a classificacao decide o caminho.
