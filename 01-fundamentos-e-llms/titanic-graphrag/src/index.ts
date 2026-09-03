@@ -12,6 +12,7 @@ import { carregarGrafo, contarPassageiros } from "./loadGraph.ts";
 import { executar, imprimirTabela, rodarAnalises } from "./analises.ts";
 import { classificar, criarLlm, gerarCypher, responder, validarCypher } from "./router.ts";
 import { medir, novoRegistro, salvar, ARQUIVO_LOG } from "./log.ts";
+import { formatarTrecho } from "../../compartilhado/formatacao.ts";
 
 const driver = neo4j.driver(
     CONFIG.neo4j.uri,
@@ -39,7 +40,7 @@ function origemDe(doc: Document): string {
 function exibirTrechos(resultados: [Document, number][]): void {
     for (const [doc, score] of resultados) {
         console.log(`\n   📄 ${origemDe(doc)} — ${(score * 100).toFixed(1)}% de similaridade`);
-        console.log(`      ${doc.pageContent.replace(/\s+/g, " ").trim().slice(0, 300)}...`);
+        console.log(`      ${formatarTrecho(doc.pageContent, CONFIG.exibicao.limiteTrecho)}`);
     }
 }
 

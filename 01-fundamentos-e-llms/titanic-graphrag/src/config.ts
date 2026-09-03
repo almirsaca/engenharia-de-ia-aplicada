@@ -56,6 +56,11 @@ export const CONFIG = Object.freeze({
     similarity: {
         topK: 3,
     },
+
+    exibicao: {
+        // Caracteres por trecho no terminal. Use SEM_LIMITE (-1) para o texto inteiro.
+        limiteTrecho: 300,
+    },
 });
 
 // Descrição do grafo entregue à LLM na geração de Cypher. Mantenha em sincronia

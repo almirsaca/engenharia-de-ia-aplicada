@@ -4,6 +4,7 @@ import { DocumentProcessor } from "../documentProcessor.ts";
 import { type PretrainedOptions } from "@huggingface/transformers";
 import { Neo4jVectorStore } from "@langchain/community/vectorstores/neo4j_vector";
 import { displayResults } from "./util.ts";
+import { SEM_LIMITE } from "../../compartilhado/formatacao.ts";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
@@ -93,7 +94,7 @@ try {
             question,
             CONFIG.similarity.topK
         )
-        displayResults(results, -1)
+        displayResults(results, SEM_LIMITE)
     }
 
 

@@ -255,6 +255,8 @@ titanic-graphrag/
 │   ├── router.ts         # Classificação, text2cypher e geração da resposta
 │   └── index.ts          # CLI
 ├── .npmrc                # legacy-peer-deps (ver Instalação)
+│
+└── ../compartilhado/formatacao.ts   # formatação de trechos, usada pelos dois laboratórios
 ├── package.json
 └── tsconfig.json
 ```
