@@ -169,13 +169,15 @@ try {
                     v => ({ bruto: v }),
                 ));
                 registro.resposta = texto;
+                // Encerra antes de imprimir: a barra ocupa a linha corrente, e
+                // um console.log escreveria em cima dela.
+                progresso.encerrar();
                 console.log(`\n💬 ${texto}\n`);
                 await salvar(registro);
                 continue;
             } catch (erro) {
                 progresso.encerrar();
                 registro.erro = erro instanceof Error ? erro.message : String(erro);
-                progresso.encerrar();
                 if (ehErroDeAutenticacao(erro)) {
                     console.error(`\n❌ O OpenRouter recusou a chave: ${erro instanceof Error ? erro.message : erro}`);
                     console.error("   Gere uma nova em https://openrouter.ai/keys e atualize a variável");
@@ -196,6 +198,11 @@ try {
                     console.error(`   Interação registrada como ${registro.id} — veja com: npm run log -- ${registro.id}\n`);
                     continue;
                 }
+            } finally {
+                // Rede de segurança: `encerrar` é idempotente, e sem isto uma
+                // saída nova do bloco deixaria o cronômetro girando sobre o
+                // prompt seguinte.
+                progresso.encerrar();
             }
         }
 
