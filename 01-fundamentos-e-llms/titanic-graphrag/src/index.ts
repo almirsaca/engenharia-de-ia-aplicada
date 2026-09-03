@@ -13,12 +13,19 @@ import { executar, imprimirTabela, rodarAnalises } from "./analises.ts";
 import { classificar, criarLlm, gerarCypher, responder, validarCypher } from "./router.ts";
 import { medir, novoRegistro, salvar, ARQUIVO_LOG } from "./log.ts";
 import { formatarTrecho, SEPARADOR } from "../../compartilhado/formatacao.ts";
+import { CATALOGO, MENU_IDIOMA, interpretarIdioma, type Idioma } from "../../compartilhado/idiomas.ts";
 import { Progresso, comEtapa } from "../../compartilhado/progresso.ts";
 
 const driver = neo4j.driver(
     CONFIG.neo4j.uri,
     neo4j.auth.basic(CONFIG.neo4j.username, CONFIG.neo4j.password),
 );
+
+let msg = CATALOGO["pt"];
+
+function definirIdioma(novo: Idioma): void {
+    msg = CATALOGO[novo];
+}
 
 let vectorStore: Neo4jVectorStore | null = null;
 let prompt: ReturnType<typeof createInterface> | null = null;
@@ -35,12 +42,12 @@ async function buscarNosDocumentos(pergunta: string): Promise<[Document, number]
 }
 
 function origemDe(doc: Document): string {
-    return `${doc.metadata.fileName ?? "documento"}, página ${doc.metadata.pageNumber ?? "?"}`;
+    return `${doc.metadata.fileName ?? "?"}, ${msg.pagina} ${doc.metadata.pageNumber ?? "?"}`;
 }
 
 function exibirTrechos(resultados: [Document, number][]): void {
     for (const [doc, score] of resultados) {
-        console.log(`\n   📄 ${origemDe(doc)} — ${(score * 100).toFixed(1)}% de similaridade`);
+        console.log(`\n   📄 ${origemDe(doc)} — ${(score * 100).toFixed(1)}% ${msg.similaridade}`);
         console.log(`      ${formatarTrecho(doc.pageContent, CONFIG.exibicao.limiteTrecho)}`);
     }
 }
@@ -59,34 +66,40 @@ function ehErroDeAutenticacao(erro: unknown): boolean {
 }
 
 try {
-    console.log("🚢 RAG híbrido sobre o Titanic — grafo de passageiros + documentos\n");
-
-    const jaCarregados = await contarPassageiros(driver);
-    if (jaCarregados === 0) {
-        console.log("Grafo vazio. Carregando o dataset...");
-        await carregarGrafo(driver);
-    } else {
-        console.log(`✅ Grafo carregado: ${jaCarregados} passageiros`);
-    }
-
-    let llm = criarLlm();
-    if (llm) {
-        console.log(`🤖 Modelo para roteamento e resposta: ${CONFIG.openRouter.model}`);
-        console.log(`🔑 Chave OpenRouter: ${impressaoDigital(CONFIG.openRouter.apiKey)}`);
-    } else {
-        console.log("⚠️  OPENROUTER_API_KEY ausente — modo sem LLM.");
-    }
-
-    console.log(`📝 Log das interações: ${ARQUIVO_LOG}  (ver com: npm run log -- <id>)`);
-    console.log("\nDigite uma pergunta, 'analises' para as consultas prontas, ou 'sair'.\n");
-
     prompt = createInterface({ input, output });
     let entradaFechada = false;
     prompt.on("close", () => { entradaFechada = true });
 
+    // O menu vem antes de tudo e é bilíngue por definição: o idioma ainda não
+    // foi escolhido. Só afeta a saída — a busca continua percorrendo o acervo
+    // inteiro, em português e em inglês.
+    console.log(MENU_IDIOMA);
+    definirIdioma(interpretarIdioma(await prompt.question("   [1] "), "pt"));
+
+    console.log(`\n${msg.titulo}\n`);
+
+    const jaCarregados = await contarPassageiros(driver);
+    if (jaCarregados === 0) {
+        console.log(msg.grafoVazio);
+        await carregarGrafo(driver);
+    } else {
+        console.log(msg.grafoCarregado(jaCarregados));
+    }
+
+    let llm = criarLlm();
+    if (llm) {
+        console.log(msg.modelo(String(CONFIG.openRouter.model)));
+        console.log(msg.chave(impressaoDigital(CONFIG.openRouter.apiKey)));
+    } else {
+        console.log(msg.semChave);
+    }
+
+    console.log(msg.log(ARQUIVO_LOG));
+    console.log(`\n${msg.instrucoes}\n`);
+
     while (!entradaFechada) {
         console.log(SEPARADOR);
-        const resposta = await prompt.question("❓ Pergunta: ");
+        const resposta = await prompt.question(msg.prompt);
         if (entradaFechada) break;
 
         const pergunta = resposta.trim();
@@ -99,6 +112,13 @@ try {
             continue;
         }
 
+        if (["idioma", "language"].includes(pergunta.toLowerCase())) {
+            console.log(MENU_IDIOMA);
+            definirIdioma(interpretarIdioma(await prompt.question("   [1] ")));
+            console.log(`\n${msg.instrucoes}\n`);
+            continue;
+        }
+
         const registro = novoRegistro(pergunta, CONFIG.openRouter.model);
         console.log(`\n🆔 ${registro.id}`);
 
@@ -108,29 +128,29 @@ try {
 
         if (llm) {
             try {
-                const { rota, bruto } = await comEtapa(progresso, "classificando a pergunta", () => medir(
+                const { rota, bruto } = await comEtapa(progresso, msg.etapaClassificando, () => medir(
                     registro, "classificacao",
                     () => classificar(llm!, pergunta),
                     v => ({ bruto: v.bruto, resultado: v.rota }),
                 ));
                 registro.rota = rota;
                 progresso.ajustarTotal(rota === "grafo" ? 4 : 3);
-                progresso.log(`🧭 Rota: ${rota === "grafo" ? "GRAFO (Cypher)" : "DOCUMENTOS (busca vetorial)"}`);
+                progresso.log(`${msg.rotaPrefixo}: ${rota === "grafo" ? msg.rotaGrafo : msg.rotaDocumentos}`);
                 if (bruto.trim().toLowerCase() !== rota) {
                     progresso.log(`   (a LLM respondeu: ${JSON.stringify(bruto.slice(0, 120))})`);
                 }
 
                 let contexto: string;
                 if (rota === "grafo") {
-                    const { cypher } = await comEtapa(progresso, "gerando a consulta Cypher", () => medir(
+                    const { cypher } = await comEtapa(progresso, msg.etapaCypher, () => medir(
                         registro, "cypher",
                         () => gerarCypher(llm!, pergunta),
                         v => ({ bruto: v.bruto, resultado: v.cypher }),
                     ));
                     validarCypher(cypher);
-                    progresso.log(`\n🔍 Cypher gerado:\n${cypher.split("\n").map(l => "      " + l.trim()).join("\n")}\n`);
+                    progresso.log(`\n${msg.cypherGerado}:\n${cypher.split("\n").map(l => "      " + l.trim()).join("\n")}\n`);
 
-                    const linhas = await comEtapa(progresso, "consultando o grafo", () => medir(
+                    const linhas = await comEtapa(progresso, msg.etapaConsultando, () => medir(
                         registro, "consulta",
                         () => executar(driver, cypher),
                         v => ({ resultado: v }),
@@ -148,7 +168,7 @@ try {
                         `Resultado:\n${JSON.stringify(linhas)}`,
                     ].join("\n");
                 } else {
-                    const resultados = await comEtapa(progresso, "buscando nos documentos", () => medir(
+                    const resultados = await comEtapa(progresso, msg.etapaBuscando, () => medir(
                         registro, "busca",
                         () => buscarNosDocumentos(pergunta),
                         v => ({ resultado: v.map(([doc, score]) => ({ origem: origemDe(doc), score })) }),
@@ -162,9 +182,9 @@ try {
 
                 registro.etapas["contexto"] = { ms: 0, resultado: contexto };
 
-                const texto = await comEtapa(progresso, "redigindo a resposta", () => medir(
+                const texto = await comEtapa(progresso, msg.etapaRedigindo, () => medir(
                     registro, "resposta",
-                    () => responder(llm!, pergunta, contexto),
+                    () => responder(llm!, pergunta, contexto, msg.instrucaoResposta),
                     v => ({ bruto: v }),
                 ));
                 registro.resposta = texto;
@@ -178,7 +198,7 @@ try {
                 progresso.encerrar();
                 registro.erro = erro instanceof Error ? erro.message : String(erro);
                 if (ehErroDeAutenticacao(erro)) {
-                    console.error(`\n❌ O OpenRouter recusou a chave: ${erro instanceof Error ? erro.message : erro}`);
+                    console.error(`\n${msg.chaveRecusada(String(erro instanceof Error ? erro.message : erro))}`);
                     console.error("   Gere uma nova em https://openrouter.ai/keys e atualize a variável");
                     console.error("   de ambiente OpenRouter__ApiKey (ou OPENROUTER_API_KEY no .env).");
                     console.error("   Seguindo em modo sem LLM nesta sessão.\n");
@@ -190,11 +210,11 @@ try {
                     const mensagem = erro instanceof Error ? erro.message : String(erro);
                     console.error(`\n❌ ${mensagem}`);
                     if (/timed out|timeout|abort/i.test(mensagem)) {
-                        console.error(`   A etapa passou de ${CONFIG.openRouter.prazoTotalMs / 1000}s e foi abortada.`);
+                        console.error(msg.prazoExcedido(CONFIG.openRouter.prazoTotalMs / 1000));
                         console.error(`   Modelos gratuitos ficam lentos sob carga; tente de novo ou troque o NLP_MODEL.`);
                         console.error(`   Modelos gratuitos disponíveis: https://openrouter.ai/models?max_price=0`);
                     }
-                    console.error(`   Interação registrada como ${registro.id} — veja com: npm run log -- ${registro.id}\n`);
+                    console.error(`${msg.registrado(registro.id)}\n`);
                     continue;
                 }
             } finally {
@@ -207,11 +227,11 @@ try {
 
         // Modo sem LLM: sem roteamento nem resposta gerada, mas a busca vetorial
         // roda localmente e as análises do grafo continuam disponíveis.
-        console.log("🧭 Modo sem LLM: busca vetorial nos documentos.");
-        console.log("   (para perguntas sobre os passageiros, use o comando 'analises')");
+        console.log(msg.modoSemLlm);
+        console.log(msg.dicaAnalises);
         registro.rota = "documentos";
         progresso.ajustarTotal(1);
-        const semLlm = await comEtapa(progresso, "buscando nos documentos", () => medir(
+        const semLlm = await comEtapa(progresso, msg.etapaBuscando, () => medir(
             registro, "busca",
             () => buscarNosDocumentos(pergunta),
             v => ({ resultado: v.map(([doc, score]) => ({ origem: origemDe(doc), score })) }),
@@ -222,7 +242,7 @@ try {
         console.log();
     }
 
-    console.log("\n👋 Encerrando...");
+    console.log(`\n${msg.encerrando}`);
 } catch (erro) {
     console.error("error", erro);
 } finally {

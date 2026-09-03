@@ -109,16 +109,31 @@ const PROMPT_RESPOSTA = `Você é um assistente especializado no caso Titanic.
 Responda à pergunta usando SOMENTE o contexto abaixo.
 Se o contexto não contiver a resposta, diga que não encontrou a informação.
 Se as fontes divergirem entre si, apresente as versões e suas origens em vez de
-escolher uma. Seja conciso e responda em português.
+escolher uma. Seja conciso.
+
+{idioma}
 
 CONTEXTO:
 {contexto}
 
 PERGUNTA: {pergunta}`;
 
-export async function responder(llm: ChatOpenAI, pergunta: string, contexto: string): Promise<string> {
+/**
+ * O acervo é bilíngue e a recuperação não filtra por idioma, então o contexto
+ * pode chegar em inglês mesmo com a pergunta em português. A instrução fixa a
+ * língua da resposta independentemente da língua das fontes.
+ */
+export async function responder(
+    llm: ChatOpenAI,
+    pergunta: string,
+    contexto: string,
+    instrucaoIdioma: string,
+): Promise<string> {
     return perguntar(
         llm,
-        PROMPT_RESPOSTA.replace("{contexto}", contexto).replace("{pergunta}", pergunta),
+        PROMPT_RESPOSTA
+            .replace("{idioma}", instrucaoIdioma)
+            .replace("{contexto}", contexto)
+            .replace("{pergunta}", pergunta),
     );
 }

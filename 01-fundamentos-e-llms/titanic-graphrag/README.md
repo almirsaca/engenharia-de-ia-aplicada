@@ -111,7 +111,34 @@ No prompt:
 | --- | --- |
 | uma pergunta | roteia para o grafo ou para os documentos |
 | `analises` | roda as sete consultas Cypher prontas |
+| `idioma` ou `language` | troca o idioma da sessão |
 | `sair` ou `Ctrl+D` | encerra |
+
+## Idioma
+
+Ao iniciar, a aplicação pergunta o idioma:
+
+```text
+🌐 Idioma / Language
+   1) Português
+   2) English
+   [1]
+```
+
+A escolha afeta **apenas a saída**: os rótulos da interface e a língua em que a LLM redige a resposta. A recuperação continua percorrendo o acervo inteiro.
+
+Isso é deliberado. O acervo é bilíngue e o modelo de embeddings é multilíngue, então uma pergunta em português já recupera trechos em inglês. Filtrar a busca por idioma jogaria fora metade das fontes — e é justamente a capacidade que justificou a troca do modelo de embeddings.
+
+A consequência é que o contexto chega numa língua e a resposta sai em outra. A instrução no prompt fixa a língua de saída:
+
+```text
+contexto em inglês  →  pergunta em português  →  resposta em português
+contexto em português →  pergunta em inglês   →  resposta em inglês
+```
+
+Verificado nos dois sentidos: com o mesmo trecho em inglês sobre os 1.178 lugares nos botes, a resposta em português saiu *"havia 1.178 lugares em botes para um total de 2.201 pessoas"*, e em inglês, *"the Titanic had 1,178 lifeboat places for 2,201 people aboard"*.
+
+O catálogo de mensagens fica em `../compartilhado/idiomas.ts`. Para acrescentar um idioma, basta implementar a interface `Mensagens` e registrá-lo em `CATALOGO`.
 
 ## Barra de progresso
 
@@ -294,6 +321,7 @@ Dois módulos ficam fora do projeto, compartilhados com o [embeddings-neo4j](../
 ```text
 01-fundamentos-e-llms/compartilhado/
 ├── formatacao.ts         # formatação de trechos para o terminal
+├── idiomas.ts            # catálogo de mensagens em português e inglês
 └── progresso.ts          # barra de progresso para operações demoradas
 ```
 
