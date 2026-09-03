@@ -1,4 +1,5 @@
 import type { DataType, PretrainedModelOptions } from "@huggingface/transformers";
+import { SEM_LIMITE } from "../../compartilhado/formatacao.ts";
 
 export const CONFIG = Object.freeze({
     neo4j: {
@@ -58,8 +59,9 @@ export const CONFIG = Object.freeze({
     },
 
     exibicao: {
-        // Caracteres por trecho no terminal. Use SEM_LIMITE (-1) para o texto inteiro.
-        limiteTrecho: 300,
+        // Caracteres exibidos por trecho no terminal, antes da resposta da LLM.
+        // Troque por um número (300, por exemplo) para encurtar a saída.
+        limiteTrecho: SEM_LIMITE,
     },
 });
 
