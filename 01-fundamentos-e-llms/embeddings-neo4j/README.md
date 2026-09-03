@@ -2,7 +2,7 @@
 
 Aplicação de linha de comando que transforma o conteúdo de PDFs sobre o Titanic em embeddings, armazena os vetores no Neo4j e permite fazer buscas semânticas por meio de perguntas digitadas no terminal.
 
-O acervo reúne três documentos: uma **Análise Preliminar de Riscos** que usa o naufrágio como estudo de caso de gestão de projetos, um trabalho sobre a história do transatlântico e um e-book em inglês. Por serem dois idiomas, o projeto usa um modelo de embeddings multilíngue.
+O acervo reúne cinco documentos: uma **Análise Preliminar de Riscos** que usa o naufrágio como estudo de caso de gestão de projetos, um trabalho sobre a história do transatlântico, dois artigos acadêmicos sobre os determinantes da sobrevivência e um e-book em inglês. Por serem dois idiomas, o projeto usa um modelo de embeddings multilíngue.
 
 ## Como funciona
 
@@ -17,7 +17,7 @@ O fluxo da aplicação é:
 1. Carregar todos os PDFs definidos em `CONFIG.pdf.paths`.
 2. Dividir o texto em chunks com sobreposição, preservando arquivo e página de origem.
 3. Gerar embeddings localmente com um modelo do Hugging Face.
-4. Apagar os nós `Chunk` existentes no Neo4j.
+4. Apagar os nós `Trecho` existentes no Neo4j.
 5. Gravar os novos documentos e seus vetores, em lotes.
 6. Abrir um prompt interativo para buscas por similaridade, exibindo o score de cada resultado.
 
@@ -95,7 +95,7 @@ A escolha do modelo multilíngue não é cosmética. Comparando a pergunta *"Por
 
 O modelo apenas inglês classificava a receita como mais próxima da pergunta do que o trecho correto. O modelo multilíngue também alinha os dois idiomas: perguntas em português recuperam trechos em inglês do e-book.
 
-Ao trocar de modelo, lembre-se de que os vetores já gravados ficam incompatíveis. Como a aplicação apaga e reindexa a cada execução, isso se resolve sozinho — salvo se o novo modelo tiver número diferente de dimensões, caso em que o índice `tensors_index` precisa ser removido antes.
+Ao trocar de modelo, lembre-se de que os vetores já gravados ficam incompatíveis. Como a aplicação apaga e reindexa a cada execução, isso se resolve sozinho — salvo se o novo modelo tiver número diferente de dimensões, caso em que o índice `trechos_index` precisa ser removido antes.
 
 ## Configuração dos documentos
 
@@ -106,6 +106,8 @@ pdf: {
     paths: [
         { path: "./docs/titanic/O Caso Titanic.pdf" },
         { path: "./docs/titanic/Titanic - A Projeção Do Transatlântico.pdf" },
+        { path: "./docs/titanic/surviving-the-titanic-disaster-economic-natural-andsocial-determinants.pdf" },
+        { path: "./docs/titanic/Titpaper.pdf" },
         { path: "./docs/titanic/Titanic-eBook.pdf", pages: [1, 24] as const },
     ],
 },
@@ -117,7 +119,7 @@ Para adicionar ou remover documentos, altere o array `CONFIG.pdf.paths`. Os cami
 
 O `Titanic-eBook.pdf` tem 31 páginas, mas as páginas 25 a 31 formam o capítulo *"Hitler's Titanic"*, sobre o naufrágio do **Wilhelm Gustloff** — outro navio, outro desastre. O próprio e-book anuncia esses artigos como um apêndice.
 
-Por padrão o laboratório indexa apenas as páginas 1 a 24, o que reduz o acervo de 150 para 135 chunks — os 15 descartados são justamente o capítulo do Gustloff. As 24 páginas restantes do e-book (46 chunks) seguem indexadas, incluindo o capítulo sobre inversão térmica como causa do desastre.
+Por padrão o laboratório indexa apenas as páginas 1 a 24, descartando os trechos do capítulo do Gustloff. As 24 páginas restantes do e-book seguem indexadas, incluindo o capítulo sobre inversão térmica como causa do desastre.
 
 Remova o `pages` dessa entrada para indexar o e-book inteiro e observar um modo de falha clássico de RAG. Com o capítulo incluído, a pergunta *"Quantas pessoas morreram no naufrágio?"* retorna, em primeiro lugar e com 86,9% de similaridade:
 
@@ -135,10 +137,10 @@ As principais opções disponíveis no mesmo arquivo são:
 | `pdf.paths[].pages` | — | Intervalo de páginas a indexar. Omitido = documento inteiro. |
 | `textSplitter.chunkSize` | `1000` | Tamanho máximo aproximado de cada trecho. |
 | `textSplitter.chunkOverlap` | `200` | Sobreposição entre trechos consecutivos. |
-| `indexing.batchSize` | `50` | Chunks enviados por chamada ao Neo4j. |
+| `indexing.batchSize` | `50` | Trechos enviados por chamada ao Neo4j. |
 | `similarity.topK` | `3` | Quantidade de resultados retornados por pergunta. |
-| `neo4j.indexName` | `tensors_index` | Nome do índice vetorial no Neo4j. |
-| `neo4j.nodeLabel` | `Chunk` | Label usado para os documentos indexados. |
+| `neo4j.indexName` | `trechos_index` | Nome do índice vetorial no Neo4j. |
+| `neo4j.nodeLabel` | `Trecho` | Label usado para os documentos indexados. |
 | `neo4j.retrievalQuery` | — | Cypher que devolve texto, metadados e score de cada resultado. |
 
 ### Por que existe um `retrievalQuery`
@@ -256,7 +258,7 @@ Verifique também se `NEO4J_URI`, `NEO4J_USER` e `NEO4J_PASSWORD` correspondem �
 A mensagem `the provided embedding function and vector index dimensions do not match` indica que o `EMBEDDING_MODEL` gera vetores de tamanho diferente do índice já existente. Remova o índice no Neo4j Browser e execute a aplicação novamente:
 
 ```cypher
-DROP INDEX tensors_index
+DROP INDEX trechos_index
 ```
 
 ### Extensão `.ts` desconhecida

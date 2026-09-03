@@ -4,7 +4,7 @@ Aplicação de linha de comando que responde perguntas sobre o Titanic escolhend
 
 ```text
                       ┌─ "Por que o navio afundou?"
-Pergunta ─→ roteador ─┤     → busca vetorial nos PDFs (nós :Chunk)
+Pergunta ─→ roteador ─┤     → busca vetorial nos PDFs (nós :Trecho)
                       └─ "Quantas mulheres da 3ª classe sobreviveram?"
                             → Cypher no grafo de passageiros (nós :Passageiro)
 ```
@@ -17,7 +17,7 @@ Os dois laboratórios usam **a mesma instância do Neo4j**, com rótulos diferen
 
 | Rótulo | Origem | Usado para |
 | --- | --- | --- |
-| `:Chunk` | [embeddings-neo4j](../embeddings-neo4j/) — PDFs sobre o Titanic | busca vetorial |
+| `:Trecho` | [embeddings-neo4j](../embeddings-neo4j/) — PDFs sobre o Titanic | busca vetorial |
 | `:Passageiro`, `:Classe`, `:Porto`, `:Bilhete` | este laboratório — dataset do Kaggle | agregação Cypher |
 
 Por isso o `docker-compose.yml` fica no outro projeto: aqui reaproveitamos o mesmo banco. Para a busca vetorial funcionar, os PDFs precisam ter sido indexados antes.
@@ -267,7 +267,7 @@ A chave em `OPENROUTER_API_KEY` é inválida ou foi revogada. Gere outra em <htt
 
 ### A busca vetorial não encontra nada
 
-Os nós `:Chunk` são criados pelo outro laboratório. Rode `npm start` em `../embeddings-neo4j` ao menos uma vez.
+Os nós `:Trecho` são criados pelo outro laboratório. Rode `npm start` em `../embeddings-neo4j` ao menos uma vez.
 
 ### `ERESOLVE` no `npm install`
 

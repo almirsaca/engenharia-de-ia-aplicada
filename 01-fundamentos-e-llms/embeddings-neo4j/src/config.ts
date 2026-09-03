@@ -16,10 +16,10 @@ export const CONFIG = Object.freeze({
         url: process.env.NEO4J_URI!,
         username: process.env.NEO4J_USER!,
         password: process.env.NEO4J_PASSWORD!,
-        indexName: "tensors_index",
+        indexName: "trechos_index",
         searchType: "vector" as const,
         textNodeProperties: ["text"],
-        nodeLabel: "Chunk",
+        nodeLabel: "Trecho",
         // Sem esta query o driver monta um retrievalQuery padrao que concatena
         // o nome da propriedade ao valor, devolvendo "text: <conteudo>".
         // Aqui devolvemos o texto limpo e a metadata sem os campos internos.
@@ -49,6 +49,8 @@ export const CONFIG = Object.freeze({
             /* { path: "./docs/ia/tensores.pdf" }, */
             { path: "./docs/titanic/O Caso Titanic.pdf" },
             { path: "./docs/titanic/Titanic - A Projeção Do Transatlântico.pdf" },
+            { path: "./docs/titanic/surviving-the-titanic-disaster-economic-natural-andsocial-determinants.pdf" },
+            { path: "./docs/titanic/Titpaper.pdf" },
             // O capítulo "Hitler's Titanic" (p.25-31) trata do naufrágio do Wilhelm
             // Gustloff, não do Titanic. Remova o `pages` para indexar o e-book
             // inteiro e observar o efeito de um distrator no acervo.

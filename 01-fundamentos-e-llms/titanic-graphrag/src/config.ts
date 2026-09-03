@@ -13,15 +13,15 @@ export const CONFIG = Object.freeze({
 
     // Busca vetorial sobre os chunks indexados pelo laboratório embeddings-neo4j.
     // Os dois laboratórios compartilham a mesma instância do Neo4j: este grava
-    // nós :Passageiro, o outro grava nós :Chunk.
+    // nós :Passageiro, o outro grava nós :Trecho.
     vector: {
         url: process.env.NEO4J_URI!,
         username: process.env.NEO4J_USER!,
         password: process.env.NEO4J_PASSWORD!,
-        indexName: "tensors_index",
+        indexName: "trechos_index",
         searchType: "vector" as const,
         textNodeProperties: ["text"],
-        nodeLabel: "Chunk",
+        nodeLabel: "Trecho",
         retrievalQuery: `
         RETURN node.text AS text,
                node { .*, embedding: Null, id: Null, text: Null } AS metadata,

@@ -1,6 +1,6 @@
 # Fluxo RAG — o caso Titanic
 
-Este documento explica o fluxo RAG (*Retrieval-Augmented Generation*) usando o acervo deste laboratório: três PDFs sobre o Titanic, entre eles uma **Análise Preliminar de Riscos** que trata o naufrágio como estudo de caso de gestão de projetos.
+Este documento explica o fluxo RAG (*Retrieval-Augmented Generation*) usando o acervo deste laboratório: cinco PDFs sobre o Titanic, entre eles uma **Análise Preliminar de Riscos** que trata o naufrágio como estudo de caso de gestão de projetos.
 
 O fluxo completo é:
 
@@ -80,7 +80,7 @@ Executada quando os documentos são cadastrados ou atualizados:
 | Gerar os *embeddings* dos trechos | `HuggingFaceTransformersEmbeddings` |
 | Armazenar vetores e metadados | `Neo4jVectorStore.addDocuments` |
 
-Neste acervo, 45 páginas de PDF viram **135 chunks**, indexados em cerca de 13 segundos.
+Neste acervo, 90 páginas de PDF viram **308 chunks**, indexados em cerca de 42 segundos.
 
 ### 2. Consulta
 

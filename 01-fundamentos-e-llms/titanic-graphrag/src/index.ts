@@ -5,6 +5,7 @@ import type { PretrainedOptions } from "@huggingface/transformers";
 import type { Document } from "@langchain/core/documents";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { createHash } from "node:crypto";
 
 import { CONFIG } from "./config.ts";
 import { carregarGrafo, contarPassageiros } from "./loadGraph.ts";
@@ -42,6 +43,14 @@ function exibirTrechos(resultados: [Document, number][]): void {
     }
 }
 
+// Impressão digital da chave, para comparar com a variável de ambiente sem
+// nunca exibir o segredo. Um terminal aberto antes de a chave ser renovada
+// carrega o valor antigo, e o sintoma (401) não deixa isso evidente.
+function impressaoDigital(chave: string | undefined): string {
+    if (!chave) return "(ausente)";
+    return "#" + createHash("sha256").update(chave).digest("hex").slice(0, 6);
+}
+
 function ehErroDeAutenticacao(erro: unknown): boolean {
     const texto = erro instanceof Error ? erro.message : String(erro);
     return /401|authentication|user not found|invalid api key|api key expired/i.test(texto);
@@ -61,6 +70,7 @@ try {
     let llm = criarLlm();
     if (llm) {
         console.log(`🤖 Modelo para roteamento e resposta: ${CONFIG.openRouter.model}`);
+        console.log(`🔑 Chave OpenRouter: ${impressaoDigital(CONFIG.openRouter.apiKey)}`);
     } else {
         console.log("⚠️  OPENROUTER_API_KEY ausente — modo sem LLM.");
     }
@@ -155,7 +165,6 @@ try {
                 continue;
             } catch (erro) {
                 registro.erro = erro instanceof Error ? erro.message : String(erro);
-                await salvar(registro);
                 if (ehErroDeAutenticacao(erro)) {
                     console.error(`\n❌ O OpenRouter recusou a chave: ${erro instanceof Error ? erro.message : erro}`);
                     console.error("   Gere uma nova em https://openrouter.ai/keys e atualize a variável");
@@ -163,6 +172,9 @@ try {
                     console.error("   Seguindo em modo sem LLM nesta sessão.\n");
                     llm = null;
                 } else {
+                    // O erro de autenticação cai para o modo sem LLM abaixo, que
+                    // grava o registro; os demais encerram aqui e gravam agora.
+                    await salvar(registro);
                     console.error(`\n❌ ${erro instanceof Error ? erro.message : erro}\n`);
                     continue;
                 }
