@@ -266,14 +266,21 @@ titanic-graphrag/
 │   ├── analises.ts       # Consultas Cypher prontas e formatação de tabela
 │   ├── router.ts         # Classificação, text2cypher e geração da resposta
 │   └── index.ts          # CLI
+├── log/                  # interações registradas (fora do controle de versão)
 ├── .npmrc                # legacy-peer-deps (ver Instalação)
-│
-└── ../compartilhado/
-    ├── formatacao.ts     # formatação de trechos, usada pelos dois laboratórios
-    └── progresso.ts      # barra de progresso para operações demoradas
 ├── package.json
 └── tsconfig.json
 ```
+
+Dois módulos ficam fora do projeto, compartilhados com o [embeddings-neo4j](../embeddings-neo4j/):
+
+```text
+01-fundamentos-e-llms/compartilhado/
+├── formatacao.ts         # formatação de trechos para o terminal
+└── progresso.ts          # barra de progresso para operações demoradas
+```
+
+Eles não têm dependências de propósito: os dois laboratórios têm `node_modules` separados, então nada ali pode importar fora da biblioteca padrão.
 
 ## Problemas comuns
 
