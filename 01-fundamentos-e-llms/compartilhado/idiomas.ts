@@ -48,6 +48,10 @@ export interface Mensagens {
     /** Mensagens exclusivas do laboratório embeddings-neo4j. */
     embeddings: {
         titulo: string;
+        paginasDe: (n: number, arquivo: string, recorte: string) => string;
+        recorte: (inicio: number, fim: number, total: number) => string;
+        totalPaginas: (paginas: number, pdfs: number) => string;
+        dividido: (n: number) => string;
         removendo: string;
         removidos: string;
         indexados: (feitos: number, total: number) => string;
@@ -99,6 +103,10 @@ const PT: Mensagens = {
 
     embeddings: {
         titulo: "🚀 Inicializando sistema de Embeddings com Neo4j...",
+        paginasDe: (n, arq, rec) => `📄 ${n} páginas lidas de ${arq}${rec}`,
+        recorte: (i, f, t) => ` (páginas ${i}-${f} de ${t})`,
+        totalPaginas: (p, pdfs) => `📚 ${p} páginas ao todo, de ${pdfs} PDFs`,
+        dividido: n => `✂️  Divididas em ${n} trechos`,
         removendo: "🗑️  Removendo todos os documentos existentes...",
         removidos: "✅ Documentos removidos com sucesso",
         indexados: (f, t) => `✅ Indexados ${f}/${t} trechos`,
@@ -150,6 +158,10 @@ const EN: Mensagens = {
 
     embeddings: {
         titulo: "🚀 Starting the Embeddings system with Neo4j...",
+        paginasDe: (n, arq, rec) => `📄 Read ${n} pages from ${arq}${rec}`,
+        recorte: (i, f, t) => ` (pages ${i}-${f} of ${t})`,
+        totalPaginas: (p, pdfs) => `📚 ${p} pages in total, from ${pdfs} PDFs`,
+        dividido: n => `✂️  Split into ${n} excerpts`,
         removendo: "🗑️  Removing all existing documents...",
         removidos: "✅ Documents removed successfully",
         indexados: (f, t) => `✅ Indexed ${f}/${t} excerpts`,

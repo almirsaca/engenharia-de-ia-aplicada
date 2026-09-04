@@ -42,6 +42,7 @@ try {
         CONFIG.pdf.paths,
         CONFIG.textSplitter,
         CONFIG.normalizacao.ativa,
+        msg,
     )
     const documents = await documentProcessor.loadAndSplit()
     const embeddings = new HuggingFaceTransformersEmbeddings({

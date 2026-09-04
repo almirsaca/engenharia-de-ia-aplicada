@@ -4,20 +4,24 @@ import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters'
 import { basename } from "node:path"
 import { type PdfSource, type TextSplitterConfig } from "./src/config.ts"
 import { normalizarDocumento } from "./src/textNormalizer.ts"
+import { CATALOGO, type Mensagens } from "../compartilhado/idiomas.ts"
 
 export class DocumentProcessor {
     private pdfSources: readonly PdfSource[]
     private textSplitterConfig: TextSplitterConfig
     private normalizar: boolean
+    private msg: Mensagens
 
     constructor(
         pdfSources: readonly PdfSource[],
         textSplitterConfig: TextSplitterConfig,
         normalizar = false,
+        msg: Mensagens = CATALOGO.pt,
     ) {
         this.pdfSources = pdfSources
         this.textSplitterConfig = textSplitterConfig
         this.normalizar = normalizar
+        this.msg = msg
     }
 
     async loadAndSplit() {
@@ -37,19 +41,20 @@ export class DocumentProcessor {
             const selectedPages = this.selectPages(pdfDocuments, source)
             rawDocuments.push(...selectedPages)
 
-            const recorte = selectedPages.length === pdfDocuments.length
+            const { paginasDe, recorte } = this.msg.embeddings
+            const trecho = selectedPages.length === pdfDocuments.length
                 ? ""
-                : ` (páginas ${source.pages?.[0]}-${source.pages?.[1]} de ${pdfDocuments.length})`
-            console.log(`📄 Loaded ${selectedPages.length} pages from ${source.path}${recorte}`);
+                : recorte(source.pages![0], source.pages![1], pdfDocuments.length)
+            console.log(paginasDe(selectedPages.length, source.path, trecho));
         }
 
-        console.log(`📚 Loaded ${rawDocuments.length} pages from ${this.pdfSources.length} PDFs`);
+        console.log(this.msg.embeddings.totalPaginas(rawDocuments.length, this.pdfSources.length));
 
         const splitter = new RecursiveCharacterTextSplitter(
             this.textSplitterConfig
         )
         const documents = await splitter.splitDocuments(rawDocuments)
-        console.log(`✂️  Split into ${documents.length} chunks`);
+        console.log(this.msg.embeddings.dividido(documents.length));
 
         // O Neo4j só armazena valores primitivos nas propriedades do nó, por isso
         // a metadata aninhada do PDFLoader (loc.pageNumber, pdf.info) é achatada.
