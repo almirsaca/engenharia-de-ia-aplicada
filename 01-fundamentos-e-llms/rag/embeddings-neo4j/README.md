@@ -60,7 +60,7 @@ docker compose version
 Entre na pasta do projeto e instale as dependências:
 
 ```powershell
-cd 01-fundamentos-e-llms/embeddings-neo4j
+cd 01-fundamentos-e-llms/rag/embeddings-neo4j
 npm ci
 ```
 

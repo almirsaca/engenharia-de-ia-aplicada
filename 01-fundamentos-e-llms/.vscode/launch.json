@@ -5,8 +5,8 @@
       "name": "Embeddings Neo4j: aplicação",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/embeddings-neo4j/src/index.ts",
-      "cwd": "${workspaceFolder}/embeddings-neo4j",
+      "program": "${workspaceFolder}/rag/embeddings-neo4j/src/index.ts",
+      "cwd": "${workspaceFolder}/rag/embeddings-neo4j",
       "runtimeArgs": [
         "--env-file=.env",
         "--experimental-strip-types"
@@ -14,7 +14,7 @@
       "console": "integratedTerminal",
       "skipFiles": [
         "<node_internals>/**",
-        "${workspaceFolder}/embeddings-neo4j/node_modules/**"
+        "${workspaceFolder}/rag/embeddings-neo4j/node_modules/**"
       ]
     },
     {
@@ -25,7 +25,7 @@
       "restart": false,
       "skipFiles": [
         "<node_internals>/**",
-        "${workspaceFolder}/embeddings-neo4j/node_modules/**"
+        "${workspaceFolder}/rag/embeddings-neo4j/node_modules/**"
       ]
     },
     {

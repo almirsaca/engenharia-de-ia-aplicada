@@ -5,8 +5,8 @@
       "name": "Embeddings Neo4j: aplicação",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/01-fundamentos-e-llms/embeddings-neo4j/src/index.ts",
-      "cwd": "${workspaceFolder}/01-fundamentos-e-llms/embeddings-neo4j",
+      "program": "${workspaceFolder}/01-fundamentos-e-llms/rag/embeddings-neo4j/src/index.ts",
+      "cwd": "${workspaceFolder}/01-fundamentos-e-llms/rag/embeddings-neo4j",
       "runtimeArgs": [
         "--env-file=.env",
         "--experimental-strip-types"
@@ -14,7 +14,7 @@
       "console": "integratedTerminal",
       "skipFiles": [
         "<node_internals>/**",
-        "${workspaceFolder}/01-fundamentos-e-llms/embeddings-neo4j/node_modules/**"
+        "${workspaceFolder}/01-fundamentos-e-llms/rag/embeddings-neo4j/node_modules/**"
       ]
     },
     {
@@ -25,7 +25,7 @@
       "restart": false,
       "skipFiles": [
         "<node_internals>/**",
-        "${workspaceFolder}/01-fundamentos-e-llms/embeddings-neo4j/node_modules/**"
+        "${workspaceFolder}/01-fundamentos-e-llms/rag/embeddings-neo4j/node_modules/**"
       ]
     },
     {

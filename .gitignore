@@ -22,10 +22,10 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Neo4j local runtime data
-01-fundamentos-e-llms/embeddings-neo4j/neo4j/data/
-01-fundamentos-e-llms/embeddings-neo4j/neo4j/logs/
-01-fundamentos-e-llms/embeddings-neo4j/neo4j/plugins/
-01-fundamentos-e-llms/embeddings-neo4j/import/
+01-fundamentos-e-llms/rag/embeddings-neo4j/neo4j/data/
+01-fundamentos-e-llms/rag/embeddings-neo4j/neo4j/logs/
+01-fundamentos-e-llms/rag/embeddings-neo4j/neo4j/plugins/
+01-fundamentos-e-llms/rag/embeddings-neo4j/import/
 
 # Editor and operating-system files
 .idea/
@@ -41,4 +41,4 @@ Desktop.ini
 *~
 
 # Logs de interacao dos laboratorios
-01-fundamentos-e-llms/titanic-graphrag/log/
+01-fundamentos-e-llms/rag/titanic-graphrag/log/

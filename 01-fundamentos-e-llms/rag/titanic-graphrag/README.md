@@ -36,7 +36,7 @@ npm start      # indexa os PDFs; necessário para a rota de documentos
 ## Instalação
 
 ```powershell
-cd 01-fundamentos-e-llms/titanic-graphrag
+cd 01-fundamentos-e-llms/rag/titanic-graphrag
 npm install
 ```
 
@@ -319,7 +319,7 @@ titanic-graphrag/
 Dois módulos ficam fora do projeto, compartilhados com o [embeddings-neo4j](../embeddings-neo4j/):
 
 ```text
-01-fundamentos-e-llms/compartilhado/
+01-fundamentos-e-llms/rag/compartilhado/
 ├── formatacao.ts         # formatação de trechos para o terminal
 ├── idiomas.ts            # catálogo de mensagens em português e inglês
 └── progresso.ts          # barra de progresso para operações demoradas
