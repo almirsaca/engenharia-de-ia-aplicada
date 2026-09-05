@@ -22,19 +22,20 @@ Itens ainda não implementados nos laboratórios [embeddings-neo4j](../) e [tita
 
 ## 1. Busca híbrida (vetorial + BM25)
 
-**Prioridade: alta. Esforço: mínimo.**
+**Prioridade: média. Esforço: mínimo — mas testada e reprovada no caso medido.**
 
-Hoje uma pergunta sobre `"Carpathia"`, `"White Star Line"` ou `"CA. 2343"` depende de sorte semântica: nomes próprios e códigos não têm significado que o embedding capture. A busca lexical resolve exatamente isso, e a híbrida funde os dois rankings.
+A hipótese: uma pergunta sobre `"Carpathia"`, `"White Star Line"` ou `"CA. 2343"` depende de sorte semântica, porque nomes próprios e códigos não têm significado que o embedding capture. A busca lexical resolveria isso, e a híbrida fundiria os dois rankings.
 
-O `Neo4jVectorStore` já suporta. Em `src/config.ts`:
+Ativar é uma palavra em `src/config.ts`:
 
 ```typescript
-searchType: "vector" as const,   // trocar por "hybrid"
+searchType: "hybrid" as const,   // era "vector"
+keywordIndexName: "trechos_keyword",
 ```
 
-Com `"hybrid"`, o driver cria um índice full-text além do vetorial e combina os resultados. É preciso conferir se o índice de palavras-chave é criado com o nome esperado (`keywordIndexName`) e se a fusão dos rankings atende — a implementação do driver é simples e pode não usar *Reciprocal Rank Fusion*.
+**O teste não confirmou a hipótese.** Para *"qual era a cor do navio?"*, cuja resposta contém literalmente a palavra "cor", a híbrida **piorou**: o trecho certo caiu de #2 para #3. E os scores voltaram com vários resultados em 100% — a fusão do driver normaliza pelo topo, sem *Reciprocal Rank Fusion*, o que descarta a informação de quanto o primeiro se destaca.
 
-**Como medir:** montar dez perguntas com nomes próprios e códigos, comparar a posição do trecho correto com `"vector"` e com `"hybrid"`.
+Vale reavaliar com perguntas que contenham nomes próprios raros, que era o cenário original da hipótese — mas com uma implementação de RRF própria, não a do driver. O índice full-text criado no teste foi removido.
 
 ## 2. Travessia de grafo exposta ao usuário
 
@@ -51,13 +52,27 @@ Bastaria acrescentar exemplos de travessia ao `GRAPH_SCHEMA` para orientar o mod
 
 ## 3. Reranking
 
-**Prioridade: alta. Esforço: alto — ver ressalva.** Implementado no titanic-graphrag usando a própria LLM, atrás de .
+**Implementado** no [titanic-graphrag](../../titanic-graphrag/README.md), atrás de `CONFIG.reranking.ativo`, desligado por padrão.
 
 Já documentado no [Fluxo RAG](./Fluxo%20RAG.md) com um caso real: para *"O Titanic foi avisado sobre icebergs?"*, um trecho sobre o valor do seguro pago às vítimas pontuou 87,1% — praticamente empatado com o trecho correto — sem responder nada.
 
-Recuperar 20 candidatos e reordenar com um *cross-encoder*, ficando com os 3 melhores. Modelos como `Xenova/ms-marco-MiniLM-L-6-v2` rodam localmente pelo Transformers.js, sem custo de API.
+### O cross-encoder não era viável
 
-**Como medir:** a posição do trecho correto antes e depois, nas perguntas onde hoje ele não é o primeiro.
+O plano original era reordenar com um *cross-encoder* local, mais rápido e barato que uma LLM. **Não existe hoje um multilíngue utilizável com Transformers.js.** Cinco modelos testados:
+
+| Modelo | Resultado |
+| --- | --- |
+| `Xenova/ms-marco-MiniLM-L-6-v2` | carrega, mas é só inglês — **piorou**, derrubando o trecho certo de #2 para #3 |
+| `Xenova/mmarco-mMiniLMv2-L12-H384-v1` | não existe |
+| `Alibaba-NLP/gte-multilingual-reranker-base` | `Unsupported model type: new` |
+| `phatjk/...-msmarco-onnx` | arquivo ONNX ausente |
+| `igorktech/...-onnx-fp16` | ONNX fora do caminho padrão |
+
+O primeiro repete, na camada de reranking, o erro já diagnosticado nos embeddings: modelo monolíngue sobre acervo em português degrada em vez de melhorar.
+
+A saída foi usar a **própria LLM como juiz de relevância** — os 20 candidatos vão numerados, ela devolve os 3 melhores. Custa uma chamada a mais, entre 17 e 35 segundos no free tier, e por isso fica desligado por padrão.
+
+**Medido:** em *"qual era a cor do navio?"*, o trecho das chaminés — única menção de cor no acervo — sobe de #2 para #1.
 
 ## 4. MMR (Maximal Marginal Relevance)
 
@@ -118,8 +133,14 @@ Declarar as duas fontes como ferramentas e deixar a LLM decidir quantas chamar r
 
 ## Ordem sugerida
 
-1. **Busca híbrida** — uma palavra no config, ganho imediato e mensurável.
-2. **Travessia de grafo** — aproveita estrutura que já existe e está ociosa.
-3. **Reranking** — corrige um problema já demonstrado com dados reais.
-4. **Tool calling** — remove a limitação de rota única.
+1. **Travessia de grafo** — aproveita estrutura que já existe e está ociosa.
+2. **Tool calling** — remove a limitação de rota única.
+3. **Small-to-big** — resolve o dilema do `chunkSize` de vez.
+4. **Self-query** — necessário assim que houver permissões ou múltiplos acervos.
+
+Já feitos: **`topK` maior** (corrige a perda de recall do índice aproximado) e **reranking pela LLM** (desligado por padrão).
+
+Descartados por medição: **cross-encoder** (não há multilíngue viável) e **busca híbrida** na implementação do driver (piorou o caso testado).
+
+> Uma lição que atravessa esses itens: as duas correções que pareciam mais óbvias no papel — híbrida e cross-encoder — foram as que falharam ao serem medidas. Nenhuma técnica deste documento vale como recomendação até ser testada **neste acervo, em português**.
 5. O restante, conforme o interesse de estudo.
