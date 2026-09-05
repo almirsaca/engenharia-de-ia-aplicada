@@ -88,7 +88,7 @@ export const CONFIG = Object.freeze({
     // multilíngue utilizável com Transformers.js: os testados ou não carregam,
     // ou são treinados só em inglês e pioram o resultado em português.
     reranking: {
-        ativo: false,
+        ativo: true,
         // Caracteres de cada trecho no prompt de seleção. O bastante para
         // julgar relevância sem inflar o prompt com 20 trechos inteiros.
         limiteTrechoNoPrompt: 300,

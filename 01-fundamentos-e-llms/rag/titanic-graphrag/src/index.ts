@@ -10,7 +10,8 @@ import { createHash } from "node:crypto";
 import { CONFIG } from "./config.ts";
 import { carregarGrafo } from "./loadGraph.ts";
 import { executar, imprimirTabela, rodarAnalises } from "./analises.ts";
-import { classificar, criarLlm, gerarCypher, reordenar, responder, validarCypher } from "./router.ts";
+import { classificar, criarLlm, gerarCypher, perguntar, responder, validarCypher } from "./router.ts";
+import { reordenar } from "../../compartilhado/reranking.ts";
 import { medir, novoRegistro, salvar, ARQUIVO_LOG } from "./log.ts";
 import { formatarTrecho, SEPARADOR } from "../../compartilhado/formatacao.ts";
 import { CATALOGO, MENU_IDIOMA, interpretarIdioma, type Idioma } from "../../compartilhado/idiomas.ts";
@@ -179,7 +180,7 @@ try {
                         ? await comEtapa(progresso, msg.etapaReordenando, () => medir(
                             registro, "reranking",
                             () => reordenar(
-                                llm!, pergunta, candidatos,
+                                (p) => perguntar(llm!, p), pergunta, candidatos,
                                 ([doc]) => doc.pageContent,
                                 CONFIG.similarity.topKExibicao,
                                 CONFIG.reranking.limiteTrechoNoPrompt,

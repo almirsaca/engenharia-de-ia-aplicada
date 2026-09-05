@@ -37,6 +37,10 @@ export const CONFIG = Object.freeze({
         // referência precisa ser feita aqui. OPENROUTER_API_KEY continua
         // aceita como alternativa, para quem preferir defini-la no .env.
         apiKey: process.env.OpenRouter__ApiKey ?? process.env.OPENROUTER_API_KEY,
+        // Limite de cada tentativa isolada e do passo inteiro. Sem o segundo, o
+        // tempo total seria (1 + maxRetries) × timeoutMs.
+        timeoutMs: 45_000,
+        prazoTotalMs: 60_000,
         temperature: 0.3,
         maxRetries: 2,
         defaultHeaders: {
@@ -86,5 +90,17 @@ export const CONFIG = Object.freeze({
         topK: 20,
         // Quantos são de fato exibidos, dos candidatos recuperados.
         topKExibicao: 3,
+    },
+
+    // Reordena os candidatos pedindo à LLM que escolha os que respondem à
+    // pergunta, em vez de confiar só na proximidade vetorial.
+    //
+    // Desligado por padrão, e não só pelo custo: **este laboratório funciona sem
+    // nenhuma chave de API**, e ligar o reranking rompe isso. Ligue para
+    // comparar a ordenação por proximidade com uma por relevância — é a única
+    // parte daqui que depende de rede.
+    reranking: {
+        ativo: false,
+        limiteTrechoNoPrompt: 300,
     },
 });

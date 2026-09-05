@@ -148,6 +148,7 @@ As principais opções disponíveis no mesmo arquivo são:
 | `indexing.batchSize` | `50` | Trechos enviados por chamada ao Neo4j. |
 | `similarity.topK` | `20` | Candidatos pedidos ao índice vetorial. |
 | `similarity.topKExibicao` | `3` | Quantos desses candidatos são exibidos. |
+| `reranking.ativo` | `false` | Reordena os candidatos pela LLM. Exige chave de API. |
 | `neo4j.indexName` | `trechos_index` | Nome do índice vetorial no Neo4j. |
 | `neo4j.nodeLabel` | `Trecho` | Label usado para os documentos indexados. |
 | `neo4j.retrievalQuery` | — | Cypher que devolve texto, metadados e score de cada resultado. |
@@ -247,6 +248,30 @@ O Neo4j não devolve o cosseno cru: ele normaliza para `(1 + cos) / 2`, de modo 
 | 0% | −1,00 | sentidos opostos |
 
 Um resultado com "60% de similaridade" corresponde a um cosseno de apenas 0,20. Percentuais abaixo de uns 70% costumam indicar que o acervo não tem a resposta.
+
+### Reranking opcional
+
+A busca vetorial ordena por **proximidade**; o reranking reordena por **resposta**. Ligado, os 20 candidatos vão numerados à LLM, que escolhe os 3 que respondem à pergunta.
+
+```typescript
+reranking: {
+    ativo: false,                 // ligue para comparar
+    limiteTrechoNoPrompt: 300,
+},
+```
+
+> **Desligado por padrão, e não só pelo custo.** Este laboratório roda **sem nenhuma chave de API** — indexação e busca são inteiramente locais. O reranking é a única parte que depende de rede, e ligá-lo rompe essa característica. Sem chave, ele avisa e segue sem reordenar.
+
+Medido em *"qual era a cor do navio?"*, cuja resposta — *"As chaminés eram pintadas de cor parda"* — é a única menção de cor no acervo:
+
+```text
+sem reranking:  O Caso Titanic p.2  |  A Projeção p.9 ← o certo  |  A Projeção p.11
+com reranking:  A Projeção p.9 ←    |  A Projeção p.11           |  A Projeção p.11
+```
+
+A LLM devolveu `2,8,3` em 15,7s e promoveu o trecho correto a primeiro.
+
+A lógica fica em `../compartilhado/reranking.ts`, sem dependências: ela recebe a função que fala com a LLM como parâmetro. Os detalhes — inclusive por que não usamos um *cross-encoder* — estão no [README do titanic-graphrag](../titanic-graphrag/README.md#reranking-pela-llm).
 
 ### O índice é aproximado, e isso custa recall
 

@@ -6,7 +6,7 @@ Dois laboratórios sobre recuperação de informação para LLMs, construídos e
 | --- | --- | --- |
 | [embeddings-neo4j](./embeddings-neo4j/) | Busca vetorial sobre PDFs: chunking, embeddings, similaridade | Não |
 | [titanic-graphrag](./titanic-graphrag/) | RAG híbrido: roteia entre busca vetorial e consulta Cypher | Sim (opcional) |
-| [compartilhado](./compartilhado/) | Formatação, progresso e idiomas usados pelos dois | — |
+| [compartilhado](./compartilhado/) | Formatação, progresso, idiomas e reranking usados pelos dois | — |
 
 ## Por que dois projetos
 

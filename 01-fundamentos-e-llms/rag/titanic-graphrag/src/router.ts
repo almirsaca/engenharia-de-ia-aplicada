@@ -19,7 +19,7 @@ export function criarLlm(): ChatOpenAI | null {
     });
 }
 
-async function perguntar(llm: ChatOpenAI, prompt: string): Promise<string> {
+export async function perguntar(llm: ChatOpenAI, prompt: string): Promise<string> {
     // O sinal cobre o passo inteiro e aborta a requisição de verdade, incluindo
     // as retentativas internas do SDK — o `timeout` do cliente limita apenas
     // cada tentativa isolada.
@@ -103,64 +103,6 @@ export function validarCypher(cypher: string): void {
     if (!/^\s*(MATCH|WITH|UNWIND|RETURN|PROFILE\s+MATCH|EXPLAIN\s+MATCH)\b/i.test(cypher)) {
         throw new Error("Consulta rejeitada: não começa por MATCH, WITH, UNWIND ou RETURN.");
     }
-}
-
-const PROMPT_REORDENAR = `Selecione os trechos que melhor respondem à pergunta.
-
-PERGUNTA: {pergunta}
-
-TRECHOS:
-{lista}
-
-Devolva apenas os números dos {n} melhores, do mais relevante ao menos,
-separados por vírgula. Se nenhum responder, devolva os {n} menos irrelevantes.
-Nada além dos números.`;
-
-/**
- * Reordena candidatos usando a LLM como juiz de relevância.
- *
- * A busca vetorial ordena por proximidade; isso ordena por **resposta**. É o
- * papel que um cross-encoder cumpriria, delegado à LLM por não haver um
- * multilíngue disponível.
- *
- * Devolve também a saída crua, porque é onde os problemas aparecem: um modelo
- * que devolva texto em vez de números, ou índices fora da faixa.
- */
-export async function reordenar<T>(
-    llm: ChatOpenAI,
-    pergunta: string,
-    candidatos: readonly T[],
-    textoDe: (c: T) => string,
-    quantidade: number,
-    limiteTrecho: number,
-): Promise<{ escolhidos: T[]; bruto: string }> {
-    const lista = candidatos
-        .map((c, i) => `[${i + 1}] ${textoDe(c).replace(/\s+/g, " ").slice(0, limiteTrecho)}`)
-        .join("\n\n");
-
-    const bruto = await perguntar(
-        llm,
-        PROMPT_REORDENAR
-            .replace("{pergunta}", pergunta)
-            .replace("{lista}", lista)
-            .replaceAll("{n}", String(quantidade)),
-    );
-
-    // Aceita qualquer formatação em volta dos números: modelos de raciocínio
-    // às vezes explicam antes de concluir.
-    const indices = [...bruto.matchAll(/\d+/g)]
-        .map(m => Number(m[0]))
-        .filter(n => n >= 1 && n <= candidatos.length)
-        .filter((n, i, todos) => todos.indexOf(n) === i)
-        .slice(0, quantidade);
-
-    // Sem índices utilizáveis, preserva a ordem da busca vetorial em vez de
-    // devolver nada: uma reordenação falha não deve custar a recuperação.
-    const escolhidos = indices.length > 0
-        ? indices.map(n => candidatos[n - 1]!)
-        : [...candidatos].slice(0, quantidade);
-
-    return { escolhidos, bruto };
 }
 
 const PROMPT_RESPOSTA = `Você é um assistente especializado no caso Titanic.

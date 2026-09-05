@@ -6,6 +6,8 @@ import { Neo4jVectorStore } from "@langchain/community/vectorstores/neo4j_vector
 import { displayResults } from "./util.ts";
 import { SEM_LIMITE, SEPARADOR } from "../../compartilhado/formatacao.ts";
 import { CATALOGO, MENU_IDIOMA, interpretarIdioma, type Idioma } from "../../compartilhado/idiomas.ts";
+import { reordenar } from "../../compartilhado/reranking.ts";
+import { criarLlm, perguntar } from "./llm.ts";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
@@ -37,6 +39,11 @@ try {
     definirIdioma(interpretarIdioma(await questionPrompt.question("   [1] "), "pt"))
 
     console.log(`\n${msg.embeddings.titulo}\n`);
+
+    // Só existe com o reranking ligado. Nulo mantém o laboratório inteiramente
+    // local, que é o seu propósito: indexar e buscar sem nenhuma chave de API.
+    const llm = CONFIG.reranking.ativo ? criarLlm() : null
+    if (CONFIG.reranking.ativo && !llm) console.log(msg.semChave)
 
     const documentProcessor = new DocumentProcessor(
         CONFIG.pdf.paths,
@@ -105,11 +112,21 @@ try {
 
         // Recupera muitos candidatos e exibe poucos: o ganho está em dar ao
         // índice aproximado um feixe de busca mais largo, não em mostrar mais.
-        const results = await _neo4jVectorStore.similaritySearchWithScore(
+        const candidatos = await _neo4jVectorStore.similaritySearchWithScore(
             question,
             CONFIG.similarity.topK
         )
-        displayResults(results.slice(0, CONFIG.similarity.topKExibicao), SEM_LIMITE, msg)
+
+        const results = llm
+            ? (await reordenar(
+                p => perguntar(llm!, p), question, candidatos,
+                ([doc]) => doc.pageContent,
+                CONFIG.similarity.topKExibicao,
+                CONFIG.reranking.limiteTrechoNoPrompt,
+            )).escolhidos
+            : candidatos.slice(0, CONFIG.similarity.topKExibicao)
+
+        displayResults(results, SEM_LIMITE, msg)
     }
 
 
