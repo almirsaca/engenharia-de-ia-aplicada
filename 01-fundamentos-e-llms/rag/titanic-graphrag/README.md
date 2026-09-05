@@ -94,7 +94,36 @@ Sem chave — ou com uma chave recusada — a aplicação entra em **modo sem LL
 
 ## Os dados
 
-`data/titanic.csv` traz as 891 linhas do conjunto de treino da competição [Titanic no Kaggle](https://www.kaggle.com/competitions/titanic), com as 12 colunas originais. O arquivo veio de um espelho público, porque o download direto pelo Kaggle exige autenticação e aceite das regras da competição.
+Os dois conjuntos da competição [Titanic no Kaggle](https://www.kaggle.com/competitions/titanic), mantidos em arquivos separados:
+
+| Arquivo | Linhas | Coluna `Survived` |
+| --- | ---: | --- |
+| `data/titanic-treino.csv` | 891 | presente — desfecho real |
+| `data/titanic-teste.csv` | 418 | **ausente** |
+
+### Por que não são um arquivo só
+
+O conjunto de teste não tem a coluna `Survived` porque **prever esses desfechos é a competição**. O Kaggle não publica o gabarito.
+
+Juntar os dois numa coluna única exigiria inventar valores — e há uma armadilha pronta para isso: o `gender_submission.csv`, distribuído junto, traz 418 linhas de `PassengerId,Survived`. Parece um gabarito, mas é o **exemplo de formato de submissão**, preenchido com o palpite ingênuo de que todas as mulheres sobreviveram. Numa tentativa anterior de mesclar os arquivos, foi exatamente ele que acabou virando a coluna de desfecho.
+
+Por isso cada passageiro carrega uma propriedade `conjunto`:
+
+```cypher
+MATCH (p:Passageiro)
+RETURN p.conjunto, count(p),
+       sum(CASE WHEN p.sobreviveu IS NULL THEN 1 ELSE 0 END) AS semDesfecho
+```
+
+```text
+   conjunto  passageiros  semDesfecho
+   treino    891          0
+   teste     418          418
+```
+
+**Toda consulta sobre sobrevivência filtra por `conjunto = 'treino'`.** Sem o filtro, os 418 sem desfecho entram no denominador e nunca no numerador: a taxa geral cairia de 38,4% para 26,1%, com aparência de número legítimo.
+
+Perguntas sobre atributos — nome, classe, idade, porto, bilhete — podem usar os 1.309.
 
 O dicionário de dados completo está documentado em [Kaggle Titanic](../embeddings-neo4j/docs/Kaggle%20Titanic.md).
 
@@ -110,7 +139,7 @@ No prompt:
 | Entrada | Efeito |
 | --- | --- |
 | uma pergunta | roteia para o grafo ou para os documentos |
-| `analises` | roda as sete consultas Cypher prontas |
+| `analises` | roda as oito consultas Cypher prontas |
 | `idioma` ou `language` | troca o idioma da sessão |
 | `sair` ou `Ctrl+D` | encerra |
 
@@ -214,7 +243,7 @@ Erros também são gravados: se a rota sair errada, o Cypher for rejeitado ou a 
     -[:COMPROU]->     (:Bilhete {codigo})
 ```
 
-Carga: 891 `:Passageiro`, 681 `:Bilhete`, 3 `:Classe`, 3 `:Porto`. Há 889 relacionamentos `:EMBARCOU_EM` porque dois passageiros não têm porto informado no dataset original.
+Carga: 1.309 `:Passageiro` (891 de treino, 418 de teste), 929 `:Bilhete`, 3 `:Classe`, 3 `:Porto`. Há 1.307 relacionamentos `:EMBARCOU_EM` porque dois passageiros não têm porto informado no dataset original.
 
 A carga usa `MERGE` por `passageiroId` e é idempotente — rodar duas vezes não duplica nada.
 
@@ -230,7 +259,7 @@ ORDER BY pessoas DESC LIMIT 5
 
 ## Algumas análises prontas
 
-`npm start` → `analises` executa sete consultas. Duas delas:
+`npm start` → `analises` executa oito consultas. Duas delas:
 
 ```text
 📊 Sobrevivência por sexo e classe
@@ -303,7 +332,9 @@ A LLM chegou a gerar a consulta destrutiva; foi `validarCypher` que a barrou ant
 
 ```text
 titanic-graphrag/
-├── data/titanic.csv      # 891 passageiros (espelho do conjunto de treino)
+├── data/
+│   ├── titanic-treino.csv   # 891 passageiros, com desfecho
+│   └── titanic-teste.csv    # 418 passageiros, sem desfecho
 ├── src/
 │   ├── config.ts         # Configuração e esquema do grafo para a LLM
 │   ├── loadGraph.ts      # Parser CSV e carga no Neo4j

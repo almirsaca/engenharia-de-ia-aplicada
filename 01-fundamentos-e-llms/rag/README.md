@@ -54,13 +54,15 @@ Estado do banco depois dos dois:
 
 | Rótulo | Nós | Origem |
 | --- | ---: | --- |
-| `:Passageiro` | 891 | `titanic-graphrag` — dataset do Kaggle |
-| `:Bilhete` | 681 | idem |
+| `:Passageiro` | 1.309 | `titanic-graphrag` — 891 de treino + 418 de teste |
+| `:Bilhete` | 929 | idem |
 | `:Trecho` | 300 | `embeddings-neo4j` — 90 páginas de 5 PDFs |
 | `:Classe` | 3 | `titanic-graphrag` |
 | `:Porto` | 3 | idem |
 
-Relacionamentos: `VIAJOU_NA` 891, `COMPROU` 891, `EMBARCOU_EM` 889 — dois passageiros não têm porto informado no dataset original.
+Relacionamentos: `VIAJOU_NA` 1.309, `COMPROU` 1.309, `EMBARCOU_EM` 1.307 — dois passageiros não têm porto informado no dataset original.
+
+Só os 891 de treino têm desfecho conhecido; nos 418 de teste, `sobreviveu` é `null`, porque prevê-los é a competição. Toda consulta sobre sobrevivência filtra por `conjunto = 'treino'`.
 
 ## O que foi medido
 

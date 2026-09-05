@@ -7,9 +7,24 @@ export interface Analise {
 
 export const ANALISES: readonly Analise[] = [
     {
+        // Vem primeiro de propósito: deixa visível que só parte do acervo tem
+        // desfecho, o que explica o filtro por conjunto nas demais consultas.
+        titulo: "Conjuntos de treino e teste",
+        cypher: `
+        MATCH (p:Passageiro)
+        RETURN p.conjunto AS conjunto,
+               count(p) AS passageiros,
+               sum(CASE WHEN p.sobreviveu IS NULL THEN 1 ELSE 0 END) AS semDesfecho,
+               CASE WHEN p.conjunto = 'treino'
+                    THEN 'desfecho conhecido'
+                    ELSE 'a prever — o Kaggle não publica o gabarito' END AS observacao
+        ORDER BY conjunto DESC`,
+    },
+    {
         titulo: "Sobrevivência por classe",
         cypher: `
         MATCH (p:Passageiro)-[:VIAJOU_NA]->(c:Classe)
+        WHERE p.conjunto = 'treino'
         RETURN c.numero AS num, c.descricao AS classe,
                count(p) AS total,
                sum(CASE WHEN p.sobreviveu THEN 1 ELSE 0 END) AS sobreviveram,
@@ -20,6 +35,7 @@ export const ANALISES: readonly Analise[] = [
         titulo: "Sobrevivência por sexo",
         cypher: `
         MATCH (p:Passageiro)
+        WHERE p.conjunto = 'treino'
         RETURN p.sexo AS sexo,
                count(p) AS total,
                sum(CASE WHEN p.sobreviveu THEN 1 ELSE 0 END) AS sobreviveram,
@@ -30,6 +46,7 @@ export const ANALISES: readonly Analise[] = [
         titulo: "Sobrevivência por sexo e classe",
         cypher: `
         MATCH (p:Passageiro)-[:VIAJOU_NA]->(c:Classe)
+        WHERE p.conjunto = 'treino'
         RETURN c.numero AS num, c.descricao AS classe, p.sexo AS sexo,
                count(p) AS total,
                sum(CASE WHEN p.sobreviveu THEN 1 ELSE 0 END) AS sobreviveram,
@@ -40,6 +57,7 @@ export const ANALISES: readonly Analise[] = [
         titulo: "Sobrevivência por porto de embarque",
         cypher: `
         MATCH (p:Passageiro)-[:EMBARCOU_EM]->(porto:Porto)
+        WHERE p.conjunto = 'treino'
         RETURN porto.nome AS porto,
                count(p) AS total,
                sum(CASE WHEN p.sobreviveu THEN 1 ELSE 0 END) AS sobreviveram,
@@ -50,6 +68,7 @@ export const ANALISES: readonly Analise[] = [
         titulo: "Idade e tarifa médias, por desfecho",
         cypher: `
         MATCH (p:Passageiro)
+        WHERE p.conjunto = 'treino'
         RETURN CASE WHEN p.sobreviveu THEN 'sobreviveu' ELSE 'morreu' END AS desfecho,
                count(p) AS total,
                round(avg(p.idade), 1) AS idadeMedia,
@@ -60,7 +79,7 @@ export const ANALISES: readonly Analise[] = [
         titulo: "Crianças (menos de 12 anos) por classe",
         cypher: `
         MATCH (p:Passageiro)-[:VIAJOU_NA]->(c:Classe)
-        WHERE p.idade IS NOT NULL AND p.idade < 12
+        WHERE p.conjunto = 'treino' AND p.idade IS NOT NULL AND p.idade < 12
         RETURN c.numero AS num, c.descricao AS classe,
                count(p) AS criancas,
                sum(CASE WHEN p.sobreviveu THEN 1 ELSE 0 END) AS sobreviveram,
@@ -71,6 +90,7 @@ export const ANALISES: readonly Analise[] = [
         titulo: "Maiores grupos viajando com o mesmo bilhete",
         cypher: `
         MATCH (p:Passageiro)-[:COMPROU]->(b:Bilhete)
+        WHERE p.conjunto = 'treino'
         WITH b, collect(p) AS grupo
         WHERE size(grupo) >= 4
         RETURN b.codigo AS bilhete,

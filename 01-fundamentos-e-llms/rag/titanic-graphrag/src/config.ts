@@ -9,7 +9,14 @@ export const CONFIG = Object.freeze({
     },
 
     csv: {
-        path: "./data/titanic.csv",
+        // Os dois conjuntos da competição, mantidos separados de propósito.
+        // O de teste NÃO tem a coluna Survived: o gabarito é justamente o que a
+        // competição pede para prever, e o Kaggle não o publica. Juntar os dois
+        // numa coluna só exigiria inventar desfechos — foi o que aconteceu numa
+        // tentativa anterior, que acabou usando as previsões do
+        // gender_submission.csv como se fossem fatos.
+        treino: "./data/titanic-treino.csv",
+        teste: "./data/titanic-teste.csv",
     },
 
     // Busca vetorial sobre os chunks indexados pelo laboratório embeddings-neo4j.
@@ -84,7 +91,8 @@ Nós:
   (:Passageiro {
       passageiroId: int, nome: string, sexo: 'male'|'female',
       idade: float | null, tarifa: float, cabine: string | null,
-      sobreviveu: boolean, irmaosConjuges: int, paisFilhos: int
+      sobreviveu: boolean | null, irmaosConjuges: int, paisFilhos: int,
+      conjunto: 'treino' | 'teste'
   })
   (:Classe {numero: int, descricao: string})        // 1=Primeira, 2=Segunda, 3=Terceira
   (:Porto {codigo: string, nome: string})           // C=Cherbourg, Q=Queenstown, S=Southampton
@@ -96,7 +104,13 @@ Relacionamentos:
   (:Passageiro)-[:COMPROU]->(:Bilhete)
 
 Observações:
-  - 'sobreviveu' é booleano; use WHERE p.sobreviveu = true para sobreviventes.
+  - IMPORTANTE: só os 891 passageiros de 'treino' têm desfecho conhecido. Nos
+    418 de 'teste', 'sobreviveu' é null, porque a competição do Kaggle não
+    publica esse gabarito. Qualquer pergunta sobre sobrevivência — contagens,
+    taxas, comparações — DEVE filtrar por p.conjunto = 'treino'. Perguntas
+    sobre atributos (nome, classe, idade, porto, bilhete) podem usar os 1309.
+  - 'sobreviveu' é booleano ou null; use WHERE p.sobreviveu = true para
+    sobreviventes e WHERE p.sobreviveu = false para as vítimas.
   - 'idade' é null para 177 dos 891 passageiros; filtre com IS NOT NULL ao calcular médias.
   - 'cabine' é null para a maioria dos passageiros.
   - Passageiros que compraram o mesmo Bilhete costumam ser famílias ou grupos.

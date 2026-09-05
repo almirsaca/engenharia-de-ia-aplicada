@@ -60,7 +60,10 @@ SET p.nome           = linha.Name,
     p.idade          = CASE WHEN linha.Age = '' THEN null ELSE toFloat(linha.Age) END,
     p.tarifa         = CASE WHEN linha.Fare = '' THEN null ELSE toFloat(linha.Fare) END,
     p.cabine         = CASE WHEN linha.Cabin = '' THEN null ELSE linha.Cabin END,
-    p.sobreviveu     = linha.Survived = '1',
+    // Fica null no conjunto de teste: o desfecho é o que a competição pede
+    // para prever, e inventá-lo contaminaria toda estatística de sobrevivência.
+    p.sobreviveu     = CASE WHEN $temDesfecho THEN linha.Survived = '1' ELSE null END,
+    p.conjunto       = $conjunto,
     p.irmaosConjuges = toInteger(linha.SibSp),
     p.paisFilhos     = toInteger(linha.Parch)
 
@@ -82,14 +85,22 @@ export async function contarPassageiros(driver: Driver): Promise<number> {
 }
 
 export async function carregarGrafo(driver: Driver): Promise<number> {
-    const csv = await readFile(CONFIG.csv.path, "utf8");
-    const linhas = parseCsv(csv);
-    console.log(`📄 ${linhas.length} passageiros lidos de ${CONFIG.csv.path}`);
-
     for (const constraint of CONSTRAINTS) await driver.executeQuery(constraint);
 
-    // MERGE por passageiroId torna a carga idempotente: rodar duas vezes não duplica.
-    await driver.executeQuery(CARGA, { linhas });
+    const conjuntos = [
+        { nome: "treino", caminho: CONFIG.csv.treino, temDesfecho: true },
+        { nome: "teste", caminho: CONFIG.csv.teste, temDesfecho: false },
+    ] as const;
+
+    for (const { nome, caminho, temDesfecho } of conjuntos) {
+        const linhas = parseCsv(await readFile(caminho, "utf8"));
+        console.log(`📄 ${linhas.length} passageiros de ${nome} lidos de ${caminho}` +
+            (temDesfecho ? "" : "  (sem desfecho conhecido)"));
+
+        // MERGE por passageiroId torna a carga idempotente: rodar duas vezes não duplica.
+        await driver.executeQuery(CARGA, { linhas, conjunto: nome, temDesfecho });
+    }
+
     const total = await contarPassageiros(driver);
     console.log(`✅ Grafo carregado: ${total} nós :Passageiro`);
     return total;
