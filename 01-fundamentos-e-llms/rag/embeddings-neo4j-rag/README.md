@@ -1,3 +1,30 @@
+# Embeddings com Neo4j — RAG (laboratório em construção)
+
+> **Em desenvolvimento.** Este laboratório partiu de uma cópia do [embeddings-neo4j](../embeddings-neo4j/) e está sendo evoluído para o fluxo RAG completo, com geração de resposta. O restante deste documento ainda descreve o projeto de origem.
+
+## Convivência com os outros laboratórios
+
+Os três projetos sob `rag/` **compartilham a mesma instância do Neo4j**, cada um com seus próprios rótulos:
+
+| Rótulo | Índice vetorial | Projeto |
+| --- | --- | --- |
+| `:Trecho` | `trechos_index` | [embeddings-neo4j](../embeddings-neo4j/) |
+| `:TrechoRag` | `trechos_rag_index` | **este** |
+| `:Passageiro`, `:Classe`, `:Porto`, `:Bilhete` | — | [titanic-graphrag](../titanic-graphrag/) |
+
+Isso importa porque a aplicação **apaga todos os nós do seu rótulo** antes de reindexar. Com rótulos iguais, rodar um projeto destruiria os dados do outro — em silêncio, sem erro nenhum.
+
+Este projeto **não tem `docker-compose.yml`**: o Neo4j sobe pelo laboratório vizinho, assim como o `titanic-graphrag` faz.
+
+```powershell
+cd ../embeddings-neo4j
+npm run infra:up
+```
+
+Manter um compose próprio não funcionaria: os dois declaravam `container_name: neo4j` e as mesmas portas, e o Docker recusa nomes duplicados.
+
+---
+
 # Embeddings com Neo4j — o caso Titanic
 
 Aplicação de linha de comando que transforma o conteúdo de PDFs sobre o Titanic em embeddings, armazena os vetores no Neo4j e permite fazer buscas semânticas por meio de perguntas digitadas no terminal.
@@ -148,6 +175,7 @@ As principais opções disponíveis no mesmo arquivo são:
 | `indexing.batchSize` | `50` | Trechos enviados por chamada ao Neo4j. |
 | `similarity.topK` | `20` | Candidatos pedidos ao índice vetorial. |
 | `similarity.topKExibicao` | `3` | Quantos desses candidatos são exibidos. |
+| `reranking.ativo` | `false` | Reordena os candidatos pela LLM. Exige chave de API. |
 | `neo4j.indexName` | `trechos_index` | Nome do índice vetorial no Neo4j. |
 | `neo4j.nodeLabel` | `Trecho` | Label usado para os documentos indexados. |
 | `neo4j.retrievalQuery` | — | Cypher que devolve texto, metadados e score de cada resultado. |
@@ -247,6 +275,30 @@ O Neo4j não devolve o cosseno cru: ele normaliza para `(1 + cos) / 2`, de modo 
 | 0% | −1,00 | sentidos opostos |
 
 Um resultado com "60% de similaridade" corresponde a um cosseno de apenas 0,20. Percentuais abaixo de uns 70% costumam indicar que o acervo não tem a resposta.
+
+### Reranking opcional
+
+A busca vetorial ordena por **proximidade**; o reranking reordena por **resposta**. Ligado, os 20 candidatos vão numerados à LLM, que escolhe os 3 que respondem à pergunta.
+
+```typescript
+reranking: {
+    ativo: false,                 // ligue para comparar
+    limiteTrechoNoPrompt: 300,
+},
+```
+
+> **Desligado por padrão, e não só pelo custo.** Este laboratório roda **sem nenhuma chave de API** — indexação e busca são inteiramente locais. O reranking é a única parte que depende de rede, e ligá-lo rompe essa característica. Sem chave, ele avisa e segue sem reordenar.
+
+Medido em *"qual era a cor do navio?"*, cuja resposta — *"As chaminés eram pintadas de cor parda"* — é a única menção de cor no acervo:
+
+```text
+sem reranking:  O Caso Titanic p.2  |  A Projeção p.9 ← o certo  |  A Projeção p.11
+com reranking:  A Projeção p.9 ←    |  A Projeção p.11           |  A Projeção p.11
+```
+
+A LLM devolveu `2,8,3` em 15,7s e promoveu o trecho correto a primeiro.
+
+A lógica fica em `../compartilhado/reranking.ts`, sem dependências: ela recebe a função que fala com a LLM como parâmetro. Os detalhes — inclusive por que não usamos um *cross-encoder* — estão no [README do titanic-graphrag](../titanic-graphrag/README.md#reranking-pela-llm).
 
 ### O índice é aproximado, e isso custa recall
 
