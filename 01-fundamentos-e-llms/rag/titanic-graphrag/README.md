@@ -130,8 +130,8 @@ O dicionário de dados completo está documentado em [Kaggle Titanic](../embeddi
 ## Execução
 
 ```powershell
-npm run load    # carrega o CSV no grafo (idempotente; opcional)
-npm start       # carrega se necessário e abre o prompt
+npm run load    # carrega os CSVs no grafo (opcional — o start já faz isso)
+npm start       # carrega e abre o prompt
 ```
 
 No prompt:
@@ -245,7 +245,7 @@ Erros também são gravados: se a rota sair errada, o Cypher for rejeitado ou a 
 
 Carga: 1.309 `:Passageiro` (891 de treino, 418 de teste), 929 `:Bilhete`, 3 `:Classe`, 3 `:Porto`. Há 1.307 relacionamentos `:EMBARCOU_EM` porque dois passageiros não têm porto informado no dataset original.
 
-A carga usa `MERGE` por `passageiroId` e é idempotente — rodar duas vezes não duplica nada.
+A carga usa `MERGE` por `passageiroId` e é idempotente, então o `npm start` a executa **sempre**, e não apenas quando o grafo está vazio. Leva menos de um segundo, e evita a classe de erro em que uma alteração nos CSVs nunca chega ao banco porque a checagem era "o grafo está vazio?" em vez de "o grafo está atualizado?".
 
 Modelar `Bilhete` como nó, em vez de propriedade, permite encontrar grupos que viajavam juntos:
 

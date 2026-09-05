@@ -16,7 +16,7 @@ export interface Mensagens {
 
     titulo: string;
     grafoCarregado: (n: number) => string;
-    grafoVazio: string;
+    passageirosLidos: (n: number, conjunto: string, caminho: string, temDesfecho: boolean) => string;
     modelo: (m: string) => string;
     chave: (fp: string) => string;
     log: (arq: string) => string;
@@ -72,7 +72,7 @@ const PT: Mensagens = {
 
     titulo: "🚢 RAG híbrido sobre o Titanic — grafo de passageiros + documentos",
     grafoCarregado: n => `✅ Grafo carregado: ${n} passageiros`,
-    grafoVazio: "Grafo vazio. Carregando o dataset...",
+    passageirosLidos: (n, conj, cam, tem) => `📄 ${n} passageiros de ${conj} lidos de ${cam}` + (tem ? "" : "  (sem desfecho conhecido)"),
     modelo: m => `🤖 Modelo para roteamento e resposta: ${m}`,
     chave: fp => `🔑 Chave OpenRouter: ${fp}`,
     log: arq => `📝 Log das interações: ${arq}  (ver com: npm run log -- <id>)`,
@@ -127,7 +127,7 @@ const EN: Mensagens = {
 
     titulo: "🚢 Hybrid RAG on the Titanic — passenger graph + documents",
     grafoCarregado: n => `✅ Graph loaded: ${n} passengers`,
-    grafoVazio: "Empty graph. Loading the dataset...",
+    passageirosLidos: (n, conj, cam, tem) => `📄 Read ${n} ${conj === "treino" ? "training" : "test"} passengers from ${cam}` + (tem ? "" : "  (outcome unknown)"),
     modelo: m => `🤖 Model for routing and answering: ${m}`,
     chave: fp => `🔑 OpenRouter key: ${fp}`,
     log: arq => `📝 Interaction log: ${arq}  (view with: npm run log -- <id>)`,

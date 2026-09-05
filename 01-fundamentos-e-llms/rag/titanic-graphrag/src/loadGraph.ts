@@ -1,6 +1,7 @@
 import neo4j, { type Driver } from "neo4j-driver";
 import { readFile } from "node:fs/promises";
 import { CONFIG } from "./config.ts";
+import { CATALOGO, type Mensagens } from "../../compartilhado/idiomas.ts";
 
 export interface LinhaCsv {
     [coluna: string]: string;
@@ -84,7 +85,13 @@ export async function contarPassageiros(driver: Driver): Promise<number> {
     return r.records[0]?.get("total").toNumber() ?? 0;
 }
 
-export async function carregarGrafo(driver: Driver): Promise<number> {
+/**
+ * Carrega os dois conjuntos e devolve o total de passageiros no grafo.
+ *
+ * Quem chama é que imprime o resultado, para que a mensagem saia no idioma da
+ * sessão — aqui só a linha por arquivo, que traz o caminho lido.
+ */
+export async function carregarGrafo(driver: Driver, msg: Mensagens = CATALOGO.pt): Promise<number> {
     for (const constraint of CONSTRAINTS) await driver.executeQuery(constraint);
 
     const conjuntos = [
@@ -94,16 +101,13 @@ export async function carregarGrafo(driver: Driver): Promise<number> {
 
     for (const { nome, caminho, temDesfecho } of conjuntos) {
         const linhas = parseCsv(await readFile(caminho, "utf8"));
-        console.log(`📄 ${linhas.length} passageiros de ${nome} lidos de ${caminho}` +
-            (temDesfecho ? "" : "  (sem desfecho conhecido)"));
+        console.log(msg.passageirosLidos(linhas.length, nome, caminho, temDesfecho));
 
         // MERGE por passageiroId torna a carga idempotente: rodar duas vezes não duplica.
         await driver.executeQuery(CARGA, { linhas, conjunto: nome, temDesfecho });
     }
 
-    const total = await contarPassageiros(driver);
-    console.log(`✅ Grafo carregado: ${total} nós :Passageiro`);
-    return total;
+    return contarPassageiros(driver);
 }
 
 // Executado apenas quando este arquivo é o ponto de entrada (`npm run load`).
@@ -113,7 +117,7 @@ if (import.meta.filename === process.argv[1]) {
         neo4j.auth.basic(CONFIG.neo4j.username, CONFIG.neo4j.password),
     );
     try {
-        await carregarGrafo(driver);
+        console.log(CATALOGO.pt.grafoCarregado(await carregarGrafo(driver)));
     } finally {
         await driver.close();
     }

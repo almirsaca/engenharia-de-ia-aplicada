@@ -8,7 +8,7 @@ import { stdin as input, stdout as output } from "node:process";
 import { createHash } from "node:crypto";
 
 import { CONFIG } from "./config.ts";
-import { carregarGrafo, contarPassageiros } from "./loadGraph.ts";
+import { carregarGrafo } from "./loadGraph.ts";
 import { executar, imprimirTabela, rodarAnalises } from "./analises.ts";
 import { classificar, criarLlm, gerarCypher, responder, validarCypher } from "./router.ts";
 import { medir, novoRegistro, salvar, ARQUIVO_LOG } from "./log.ts";
@@ -82,13 +82,10 @@ try {
 
     console.log(`\n${msg.titulo}\n`);
 
-    const jaCarregados = await contarPassageiros(driver);
-    if (jaCarregados === 0) {
-        console.log(msg.grafoVazio);
-        await carregarGrafo(driver);
-    } else {
-        console.log(msg.grafoCarregado(jaCarregados));
-    }
+    // Carrega sempre, e não apenas quando o grafo está vazio. A carga usa MERGE
+    // por passageiroId, então é idempotente e leva menos de um segundo — barato
+    // perto de descobrir tarde que uma alteração nos CSVs nunca chegou ao banco.
+    console.log(msg.grafoCarregado(await carregarGrafo(driver, msg)));
 
     let llm = criarLlm();
     if (llm) {
