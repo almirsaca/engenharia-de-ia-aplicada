@@ -146,7 +146,8 @@ As principais opções disponíveis no mesmo arquivo são:
 | `textSplitter.chunkSize` | `1000` | Tamanho máximo aproximado de cada trecho. |
 | `textSplitter.chunkOverlap` | `200` | Sobreposição entre trechos consecutivos. |
 | `indexing.batchSize` | `50` | Trechos enviados por chamada ao Neo4j. |
-| `similarity.topK` | `3` | Quantidade de resultados retornados por pergunta. |
+| `similarity.topK` | `20` | Candidatos pedidos ao índice vetorial. |
+| `similarity.topKExibicao` | `3` | Quantos desses candidatos são exibidos. |
 | `neo4j.indexName` | `trechos_index` | Nome do índice vetorial no Neo4j. |
 | `neo4j.nodeLabel` | `Trecho` | Label usado para os documentos indexados. |
 | `neo4j.retrievalQuery` | — | Cypher que devolve texto, metadados e score de cada resultado. |
@@ -246,6 +247,26 @@ O Neo4j não devolve o cosseno cru: ele normaliza para `(1 + cos) / 2`, de modo 
 | 0% | −1,00 | sentidos opostos |
 
 Um resultado com "60% de similaridade" corresponde a um cosseno de apenas 0,20. Percentuais abaixo de uns 70% costumam indicar que o acervo não tem a resposta.
+
+### O índice é aproximado, e isso custa recall
+
+O índice vetorial do Neo4j é **HNSW**: vizinhos mais próximos *aproximados*. Ele não compara a pergunta com todos os trechos — navega por um grafo de proximidade e para cedo. É o que o torna viável em milhões de documentos, ao custo de às vezes perder resultados legítimos.
+
+Isso não é teórico. Para *"qual era a cor do barco?"*, o único trecho do acervo que fala de cor — *"As chaminés eram pintadas de cor parda com uma faixa preta"* — é o **terceiro mais similar** pelo cálculo exato sobre os 300 vetores, e mesmo assim não era retornado:
+
+| `topK` pedido | O trecho aparece? | Tempo |
+| ---: | --- | ---: |
+| 3 | não | 66 ms |
+| 5 | não | 73 ms |
+| 10 | não | 75 ms |
+| **20** | **sim, na posição 3** | **66 ms** |
+| 50 | sim, na posição 3 | 79 ms |
+
+Um `k` maior alarga o feixe de busca e melhora o recall. E **não custa nada**: buscar 20 leva o mesmo tempo que buscar 3, porque o gargalo é navegar até a vizinhança certa, não coletar mais alguns vizinhos ao chegar lá.
+
+Por isso as duas configurações são separadas: `topK: 20` é o que se pede ao índice, `topKExibicao: 3` é o que se mostra. Buscar mais para exibir o mesmo.
+
+> Recall melhor não é recall garantido — o HNSW continua aproximado. A correção seguinte é o reranking, que escolheria quais 3 dos 20 merecem aparecer; ver [Melhorias planejadas](./docs/Melhorias%20planejadas.md).
 
 ### Por que sempre voltam três resultados
 

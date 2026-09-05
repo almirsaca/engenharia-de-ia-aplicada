@@ -78,6 +78,13 @@ export const CONFIG = Object.freeze({
         batchSize: 50,
     },
     similarity: {
-        topK: 3,
+        // Candidatos pedidos ao índice. O índice vetorial do Neo4j é HNSW —
+        // vizinhos mais próximos *aproximados* —, e com k pequeno o feixe de
+        // busca é estreito demais: medimos trechos legitimamente entre os três
+        // mais similares que só aparecem a partir de k=20. Buscar 20 custa o
+        // mesmo que buscar 3 (66ms nos dois casos).
+        topK: 20,
+        // Quantos são de fato exibidos, dos candidatos recuperados.
+        topKExibicao: 3,
     },
 });

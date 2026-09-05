@@ -38,7 +38,11 @@ async function buscarNosDocumentos(pergunta: string): Promise<[Document, number]
         });
         vectorStore = await Neo4jVectorStore.fromExistingGraph(embeddings, CONFIG.vector);
     }
-    return vectorStore.similaritySearchWithScore(pergunta, CONFIG.similarity.topK);
+    // Recupera muitos candidatos e devolve poucos: o índice HNSW é aproximado e
+    // precisa de um feixe largo para não perder trechos relevantes, mas mandar
+    // todos eles à LLM só encheria o prompt de ruído.
+    const candidatos = await vectorStore.similaritySearchWithScore(pergunta, CONFIG.similarity.topK);
+    return candidatos.slice(0, CONFIG.similarity.topKExibicao);
 }
 
 function origemDe(doc: Document): string {

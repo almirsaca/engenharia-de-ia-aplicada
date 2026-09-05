@@ -61,7 +61,13 @@ export const CONFIG = Object.freeze({
     },
 
     similarity: {
-        topK: 3,
+        // Candidatos pedidos ao índice HNSW, que é aproximado: com k pequeno o
+        // feixe de busca é estreito e perde trechos legitimamente entre os mais
+        // similares. Ver a nota equivalente em embeddings-neo4j/src/config.ts.
+        topK: 20,
+        // Quantos vão para a tela e para o contexto da LLM. Enviar os 20
+        // encheria o prompt de ruído e diluiria a resposta.
+        topKExibicao: 3,
     },
 
     exibicao: {

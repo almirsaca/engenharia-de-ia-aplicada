@@ -103,11 +103,13 @@ try {
             continue
         }
 
+        // Recupera muitos candidatos e exibe poucos: o ganho está em dar ao
+        // índice aproximado um feixe de busca mais largo, não em mostrar mais.
         const results = await _neo4jVectorStore.similaritySearchWithScore(
             question,
             CONFIG.similarity.topK
         )
-        displayResults(results, SEM_LIMITE, msg)
+        displayResults(results.slice(0, CONFIG.similarity.topKExibicao), SEM_LIMITE, msg)
     }
 
 
