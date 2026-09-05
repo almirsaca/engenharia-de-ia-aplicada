@@ -77,6 +77,23 @@ export const CONFIG = Object.freeze({
         topKExibicao: 3,
     },
 
+    // Reordena os candidatos pedindo à LLM que escolha os que respondem à
+    // pergunta, em vez de confiar só na proximidade vetorial.
+    //
+    // Desligado por padrão: custa uma chamada a mais (~17 s no free tier) e
+    // deixa o laboratório lento. Ligue para comparar — o ganho aparece nas
+    // perguntas em que o trecho certo é recuperado, mas não em primeiro.
+    //
+    // A rota comum seria um cross-encoder, mais rápido e barato. Não há hoje um
+    // multilíngue utilizável com Transformers.js: os testados ou não carregam,
+    // ou são treinados só em inglês e pioram o resultado em português.
+    reranking: {
+        ativo: false,
+        // Caracteres de cada trecho no prompt de seleção. O bastante para
+        // julgar relevância sem inflar o prompt com 20 trechos inteiros.
+        limiteTrechoNoPrompt: 300,
+    },
+
     exibicao: {
         // Caracteres exibidos por trecho no terminal, antes da resposta da LLM.
         // Troque por um número (300, por exemplo) para encurtar a saída.

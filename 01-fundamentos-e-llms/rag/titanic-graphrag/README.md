@@ -169,6 +169,46 @@ Verificado nos dois sentidos: com o mesmo trecho em inglês sobre os 1.178 lugar
 
 O catálogo de mensagens fica em `../compartilhado/idiomas.ts`. Para acrescentar um idioma, basta implementar a interface `Mensagens` e registrá-lo em `CATALOGO`.
 
+## Reranking pela LLM
+
+A busca vetorial ordena por **proximidade**; o reranking reordena por **resposta**. Quando ligado, os 20 candidatos recuperados são apresentados à LLM, numerados e cortados em 300 caracteres, e ela escolhe os 3 que respondem à pergunta.
+
+```typescript
+reranking: {
+    ativo: false,                 // ligue para comparar
+    limiteTrechoNoPrompt: 300,
+},
+```
+
+Desligado por padrão: custa uma chamada a mais, medida entre 17 e 35 segundos no free tier.
+
+### O ganho, medido
+
+Para *"qual era a cor do navio?"*, o único trecho do acervo que menciona cor — *"As chaminés eram pintadas de cor parda"* — era recuperado em **segundo lugar**, atrás de um trecho sobre binóculos e avisos de iceberg:
+
+```text
+sem reranking:  O Caso Titanic p.2  |  A Projeção p.9 ← o certo  |  A Projeção p.11
+com reranking:  A Projeção p.9 ←    |  A Projeção p.11           |  A Projeção p.11
+```
+
+A LLM devolveu `2,3,8` e promoveu o trecho correto a primeiro.
+
+### Por que não um cross-encoder
+
+O caminho convencional seria um *cross-encoder*: um modelo pequeno que lê o par (pergunta, trecho) junto e atribui uma nota — mais rápido e mais barato que uma LLM. **Não há hoje um multilíngue utilizável com Transformers.js.** Cinco tentativas:
+
+| Modelo | Resultado |
+| --- | --- |
+| `Xenova/ms-marco-MiniLM-L-6-v2` | carrega, mas é só inglês — **piorou**: o trecho certo caiu de #2 para #3 |
+| `Xenova/mmarco-mMiniLMv2-L12-H384-v1` | não existe |
+| `Alibaba-NLP/gte-multilingual-reranker-base` | `Unsupported model type: new` |
+| `phatjk/...-msmarco-onnx` | arquivo ONNX ausente |
+| `igorktech/...-onnx-fp16` | ONNX fora do caminho padrão |
+
+O primeiro repete, na camada de reranking, o mesmo erro que já havíamos diagnosticado nos embeddings: modelo monolíngue sobre acervo em português degrada em vez de melhorar.
+
+A busca híbrida com BM25 também foi testada e igualmente **piorou** o caso — o trecho certo foi de #2 para #3, e a fusão do driver normaliza os scores pelo topo, sem *Reciprocal Rank Fusion*.
+
 ## Barra de progresso
 
 Cada pergunta faz até quatro etapas e pode levar de 30 a 60 segundos com os modelos gratuitos. Enquanto isso, uma barra mostra em que ponto está:

@@ -39,6 +39,7 @@ export interface Mensagens {
     etapaCypher: string;
     etapaConsultando: string;
     etapaBuscando: string;
+    etapaReordenando: string;
     etapaRedigindo: string;
 
     chaveRecusada: (msg: string) => string;
@@ -95,6 +96,7 @@ const PT: Mensagens = {
     etapaCypher: "gerando a consulta Cypher",
     etapaConsultando: "consultando o grafo",
     etapaBuscando: "buscando nos documentos",
+    etapaReordenando: "reordenando os candidatos",
     etapaRedigindo: "redigindo a resposta",
 
     chaveRecusada: msg => `❌ O OpenRouter recusou a chave: ${msg}`,
@@ -150,6 +152,7 @@ const EN: Mensagens = {
     etapaCypher: "generating the Cypher query",
     etapaConsultando: "querying the graph",
     etapaBuscando: "searching the documents",
+    etapaReordenando: "reranking the candidates",
     etapaRedigindo: "composing the answer",
 
     chaveRecusada: msg => `❌ OpenRouter rejected the key: ${msg}`,

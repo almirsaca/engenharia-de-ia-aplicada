@@ -10,9 +10,9 @@ Itens ainda não implementados nos laboratórios [embeddings-neo4j](../) e [tita
 | Agregação (Cypher) | *"Quantas mulheres da 3ª classe sobreviveram?"* | ✅ implementado |
 | Travessia de grafo | *"Quem viajava com a família Sage?"* | ⚠️ dados existem, não exposto |
 | Busca lexical (BM25) | *"O que dizem sobre o Carpathia?"* | ❌ |
-| Busca híbrida | ambos os casos acima | ❌ |
+| Busca híbrida | ambos os casos acima | ⚠️ testada, piorou o caso medido |
 | MMR (diversidade) | evitar três trechos quase idênticos | ❌ |
-| Reranking | reordenar os candidatos | ❌ |
+| Reranking | reordenar os candidatos | ⚠️ via LLM, desligado por padrão |
 | Small-to-big | precisão na busca, contexto na resposta | ❌ |
 | Self-query | filtros extraídos da pergunta | ❌ |
 | HyDE | perguntas curtas ou vagas | ❌ |
@@ -51,7 +51,7 @@ Bastaria acrescentar exemplos de travessia ao `GRAPH_SCHEMA` para orientar o mod
 
 ## 3. Reranking
 
-**Prioridade: alta. Esforço: médio.**
+**Prioridade: alta. Esforço: alto — ver ressalva.** Implementado no titanic-graphrag usando a própria LLM, atrás de .
 
 Já documentado no [Fluxo RAG](./Fluxo%20RAG.md) com um caso real: para *"O Titanic foi avisado sobre icebergs?"*, um trecho sobre o valor do seguro pago às vítimas pontuou 87,1% — praticamente empatado com o trecho correto — sem responder nada.
 

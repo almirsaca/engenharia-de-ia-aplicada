@@ -10,7 +10,7 @@ import { createHash } from "node:crypto";
 import { CONFIG } from "./config.ts";
 import { carregarGrafo } from "./loadGraph.ts";
 import { executar, imprimirTabela, rodarAnalises } from "./analises.ts";
-import { classificar, criarLlm, gerarCypher, responder, validarCypher } from "./router.ts";
+import { classificar, criarLlm, gerarCypher, reordenar, responder, validarCypher } from "./router.ts";
 import { medir, novoRegistro, salvar, ARQUIVO_LOG } from "./log.ts";
 import { formatarTrecho, SEPARADOR } from "../../compartilhado/formatacao.ts";
 import { CATALOGO, MENU_IDIOMA, interpretarIdioma, type Idioma } from "../../compartilhado/idiomas.ts";
@@ -38,11 +38,9 @@ async function buscarNosDocumentos(pergunta: string): Promise<[Document, number]
         });
         vectorStore = await Neo4jVectorStore.fromExistingGraph(embeddings, CONFIG.vector);
     }
-    // Recupera muitos candidatos e devolve poucos: o índice HNSW é aproximado e
-    // precisa de um feixe largo para não perder trechos relevantes, mas mandar
-    // todos eles à LLM só encheria o prompt de ruído.
-    const candidatos = await vectorStore.similaritySearchWithScore(pergunta, CONFIG.similarity.topK);
-    return candidatos.slice(0, CONFIG.similarity.topKExibicao);
+    // Devolve todos os candidatos: o corte para topKExibicao acontece depois do
+    // reranking, senão a reordenação escolheria entre três em vez de vinte.
+    return vectorStore.similaritySearchWithScore(pergunta, CONFIG.similarity.topK);
 }
 
 function origemDe(doc: Document): string {
@@ -135,7 +133,9 @@ try {
                     v => ({ bruto: v.bruto, resultado: v.rota }),
                 ));
                 registro.rota = rota;
-                progresso.ajustarTotal(rota === "grafo" ? 4 : 3);
+                // Grafo: classificar, Cypher, consultar, responder.
+                // Documentos: classificar, buscar, [reordenar], responder.
+                progresso.ajustarTotal(rota === "grafo" ? 4 : CONFIG.reranking.ativo ? 4 : 3);
                 progresso.log(`${msg.rotaPrefixo}: ${rota === "grafo" ? msg.rotaGrafo : msg.rotaDocumentos}`);
                 if (bruto.trim().toLowerCase() !== rota) {
                     progresso.log(`   (a LLM respondeu: ${JSON.stringify(bruto.slice(0, 120))})`);
@@ -169,11 +169,25 @@ try {
                         `Resultado:\n${JSON.stringify(linhas)}`,
                     ].join("\n");
                 } else {
-                    const resultados = await comEtapa(progresso, msg.etapaBuscando, () => medir(
+                    const candidatos = await comEtapa(progresso, msg.etapaBuscando, () => medir(
                         registro, "busca",
                         () => buscarNosDocumentos(pergunta),
                         v => ({ resultado: v.map(([doc, score]) => ({ origem: origemDe(doc), score })) }),
                     ));
+
+                    const resultados = CONFIG.reranking.ativo
+                        ? await comEtapa(progresso, msg.etapaReordenando, () => medir(
+                            registro, "reranking",
+                            () => reordenar(
+                                llm!, pergunta, candidatos,
+                                ([doc]) => doc.pageContent,
+                                CONFIG.similarity.topKExibicao,
+                                CONFIG.reranking.limiteTrechoNoPrompt,
+                            ),
+                            v => ({ bruto: v.bruto, resultado: v.escolhidos.map(([d]) => origemDe(d)) }),
+                        )).then(v => v.escolhidos)
+                        : candidatos.slice(0, CONFIG.similarity.topKExibicao);
+
                     progresso.limpar();
                     exibirTrechos(resultados);
                     contexto = resultados
