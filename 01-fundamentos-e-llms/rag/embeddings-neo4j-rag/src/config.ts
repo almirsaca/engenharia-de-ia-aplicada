@@ -1,9 +1,16 @@
 import type { DataType, PretrainedModelOptions } from "@huggingface/transformers";
+import { readFileSync } from "node:fs";
 
 export interface TextSplitterConfig {
     chunkSize: number;
     chunkOverlap: number;
 }
+
+const promptsFolder = './prompts';
+const promptsFiles = {
+    answerPrompt: `${promptsFolder}/answerPrompt.json`,
+    template: `${promptsFolder}/template.txt`,
+};
 
 export interface PdfSource {
     path: string;
@@ -12,6 +19,8 @@ export interface PdfSource {
 }
 
 export const CONFIG = Object.freeze({
+    promptConfig: JSON.parse(readFileSync(promptsFiles.answerPrompt, 'utf-8')),
+    templateText: readFileSync(promptsFiles.template, 'utf-8'),
     neo4j: {
         url: process.env.NEO4J_URI!,
         username: process.env.NEO4J_USER!,
@@ -93,12 +102,12 @@ export const CONFIG = Object.freeze({
     },
 
     // Reordena os candidatos pedindo à LLM que escolha os que respondem à
-    // pergunta, em vez de confiar só na proximidade vetorial.
+    // pergunta, antes de entregá-los para a geração da resposta.
     //
-    // Desligado por padrão, e não só pelo custo: **este laboratório funciona sem
-    // nenhuma chave de API**, e ligar o reranking rompe isso. Ligue para
-    // comparar a ordenação por proximidade com uma por relevância — é a única
-    // parte daqui que depende de rede.
+    // Desligado por padrão: acrescenta uma chamada de LLM por pergunta, além da
+    // que redige a resposta. Ligue para comparar a ordenação por proximidade
+    // com uma por relevância — a diferença aparece quando o trecho certo é
+    // recuperado, mas não em primeiro lugar.
     reranking: {
         ativo: false,
         limiteTrechoNoPrompt: 300,

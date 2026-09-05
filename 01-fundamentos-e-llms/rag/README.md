@@ -1,12 +1,13 @@
 # RAG — laboratórios sobre o caso Titanic
 
-Dois laboratórios sobre recuperação de informação para LLMs, construídos em sequência. O segundo existe porque o primeiro não bastava — e essa ordem é o conteúdo.
+Três laboratórios sobre recuperação de informação para LLMs, construídos em sequência. Cada um existe porque o anterior não bastava — e essa ordem é o conteúdo.
 
 | Laboratório | O que demonstra | Precisa de chave de API? |
 | --- | --- | --- |
 | [embeddings-neo4j](./embeddings-neo4j/) | Busca vetorial sobre PDFs: chunking, embeddings, similaridade | Não |
 | [titanic-graphrag](./titanic-graphrag/) | RAG híbrido: roteia entre busca vetorial e consulta Cypher | Sim (opcional) |
-| [compartilhado](./compartilhado/) | Formatação, progresso, idiomas e reranking usados pelos dois | — |
+| [embeddings-neo4j-rag](./embeddings-neo4j-rag/) | RAG completo: recupera e **gera a resposta**, com o prompt em arquivo | Sim |
+| [compartilhado](./compartilhado/) | Formatação, progresso, idiomas e reranking usados pelos três | — |
 
 ## Por que dois projetos
 
@@ -57,8 +58,11 @@ Estado do banco depois dos dois:
 | `:Passageiro` | 1.309 | `titanic-graphrag` — 891 de treino + 418 de teste |
 | `:Bilhete` | 929 | idem |
 | `:Trecho` | 300 | `embeddings-neo4j` — 90 páginas de 5 PDFs |
+| `:TrechoRag` | 300 | `embeddings-neo4j-rag` — o mesmo acervo, rótulo próprio |
 | `:Classe` | 3 | `titanic-graphrag` |
 | `:Porto` | 3 | idem |
+
+Os rótulos precisam ser distintos: cada laboratório **apaga todos os nós do seu rótulo** antes de reindexar. Com rótulos iguais, um destruiria os dados do outro sem emitir erro.
 
 Relacionamentos: `VIAJOU_NA` 1.309, `COMPROU` 1.309, `EMBARCOU_EM` 1.307 — dois passageiros não têm porto informado no dataset original.
 

@@ -61,6 +61,8 @@ export interface Mensagens {
         instrucoes: string;
         encontrados: (n: number) => string;
         perguntaInvalida: string;
+        resposta: string;
+        fontes: string;
         encerrandoBusca: string;
         concluido: string;
     };
@@ -117,6 +119,8 @@ const PT: Mensagens = {
         instrucoes: "Digite uma pergunta, 'idioma' para trocar, ou 'sair' para encerrar.",
         encontrados: n => `📄 Encontrados ${n} trechos relevantes:`,
         perguntaInvalida: "⚠️  Digite uma pergunta válida.",
+        resposta: "Resposta",
+        fontes: "Fontes",
         encerrandoBusca: "👋 Encerrando a busca...",
         concluido: "✅ Processamento concluído com sucesso!",
     },
@@ -173,6 +177,8 @@ const EN: Mensagens = {
         instrucoes: "Type a question, 'idioma' to switch language, or 'sair' to quit.",
         encontrados: n => `📄 Found ${n} relevant excerpts:`,
         perguntaInvalida: "⚠️  Please type a valid question.",
+        resposta: "Answer",
+        fontes: "Sources",
         encerrandoBusca: "👋 Ending the search...",
         concluido: "✅ Processing completed successfully!",
     },
