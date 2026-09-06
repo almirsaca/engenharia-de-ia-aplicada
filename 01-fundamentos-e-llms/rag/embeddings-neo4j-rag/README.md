@@ -39,12 +39,13 @@ Precisa de **chave da OpenRouter**, diferente do `embeddings-neo4j`, que roda in
 
 A chave é lida da variável de ambiente `OpenRouter__ApiKey` — ver o [procedimento detalhado](../titanic-graphrag/README.md#a-chave-do-openrouter).
 
-O Neo4j sobe pelo laboratório vizinho, porque este projeto **não tem `docker-compose.yml`**:
+O Neo4j sobe daqui mesmo:
 
 ```powershell
-cd ../embeddings-neo4j
 npm run infra:up
 ```
+
+O `docker-compose.yml` vive em [`../`](../docker-compose.yml), ao lado de `compartilhado/`, porque a instância é uma só para os três laboratórios — o `infra:up` de cada um aponta para esse arquivo.
 
 ## Instalação e execução
 
@@ -126,7 +127,9 @@ Os três projetos **compartilham a mesma instância do Neo4j**, cada um com seus
 
 Isso importa porque a aplicação **apaga todos os nós do seu rótulo** antes de reindexar. Com rótulos iguais, rodar um projeto destruiria os dados do outro — em silêncio, sem erro nenhum. Foi o que aconteceu uma vez, deixando o vizinho com 250 dos 300 trechos.
 
-Manter um `docker-compose.yml` próprio também não funcionaria: os dois declaravam `container_name: neo4j` e as mesmas portas, e o Docker recusa nomes duplicados.
+A instância, essa sim, é única: o `titanic-graphrag` consulta os nós `:Trecho` que o `embeddings-neo4j` grava, então os três precisam falar com o mesmo banco. Por isso o `docker-compose.yml` foi para `rag/`, e não para dentro de um dos projetos.
+
+Um compose por laboratório seria possível — bastaria o mesmo `name:` de projeto nos três arquivos, e o Compose entenderia que se trata do mesmo container em vez de recusar o `container_name` duplicado. O que pesa contra é a sincronia: trocar a versão do Neo4j viraria três edições, e esquecer uma faria o Compose recriar o container por baixo dos outros dois.
 
 ## Estrutura
 

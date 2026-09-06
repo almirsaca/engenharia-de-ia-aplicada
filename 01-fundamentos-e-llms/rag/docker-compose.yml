@@ -1,4 +1,14 @@
-version: '3.8'
+# Infraestrutura compartilhada pelos três laboratórios.
+#
+# Vive aqui, e não dentro de um deles, porque a instância é uma só: o
+# titanic-graphrag consulta os nós :Trecho que o embeddings-neo4j grava, e os
+# três apontam para bolt://localhost:7687. Cada laboratório sobe o banco com
+# `npm run infra:up`, que aponta para este arquivo.
+#
+# O `name` fixa o nome do projeto Compose. Sem ele o nome viria do diretório, e
+# subir de lugares diferentes criaria projetos distintos disputando o mesmo
+# `container_name`.
+name: rag
 
 services:
   neo4j:

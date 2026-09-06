@@ -20,16 +20,17 @@ Os dois laboratórios usam **a mesma instância do Neo4j**, com rótulos diferen
 | `:Trecho` | [embeddings-neo4j](../embeddings-neo4j/) — PDFs sobre o Titanic | busca vetorial |
 | `:Passageiro`, `:Classe`, `:Porto`, `:Bilhete` | este laboratório — dataset do Kaggle | agregação Cypher |
 
-Por isso o `docker-compose.yml` fica no outro projeto: aqui reaproveitamos o mesmo banco. Para a busca vetorial funcionar, os PDFs precisam ter sido indexados antes.
+Por isso o `docker-compose.yml` fica em [`../`](../docker-compose.yml), compartilhado pelos três laboratórios: o banco é o mesmo. Para a busca vetorial funcionar, os PDFs precisam ter sido indexados antes.
 
 ## Pré-requisitos
 
 - Node.js `22.13.1` ou compatível com `--experimental-strip-types`.
-- Neo4j em execução — subir pelo laboratório vizinho:
+- Neo4j em execução — sobe daqui mesmo, mas os PDFs precisam ser indexados pelo vizinho:
 
 ```powershell
-cd ../embeddings-neo4j
 npm run infra:up
+
+cd ../embeddings-neo4j
 npm start      # indexa os PDFs; necessário para a rota de documentos
 ```
 

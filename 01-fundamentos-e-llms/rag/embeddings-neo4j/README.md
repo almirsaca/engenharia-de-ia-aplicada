@@ -320,7 +320,9 @@ O Neo4j Browser fica disponível em [http://localhost:7474](http://localhost:747
 | `npm run infra:up` | Cria e inicia o container do Neo4j. |
 | `npm run infra:down` | Encerra o Neo4j e remove o container. |
 
-O Neo4j utiliza bind mounts nas pastas `neo4j/data`, `neo4j/logs`, `neo4j/plugins` e `import`. Portanto, os dados locais podem permanecer nessas pastas depois de `npm run infra:down`.
+Os dois apontam para [`../docker-compose.yml`](../docker-compose.yml), compartilhado com os outros laboratórios — a instância do Neo4j é uma só. Os mesmos comandos existem no `titanic-graphrag` e no `embeddings-neo4j-rag`, e fazem exatamente a mesma coisa.
+
+O Neo4j utiliza bind mounts nas pastas `../neo4j/data`, `../neo4j/logs`, `../neo4j/plugins` e `../import`. Os dados ficam nessas pastas depois de `npm run infra:down`, que remove o container mas não toca no que está em disco.
 
 ## Depuração
 
@@ -345,7 +347,6 @@ embeddings-neo4j/
 │   ├── index.ts             # Inicialização e prompt interativo
 │   └── util.ts              # Formatação dos resultados
 ├── documentProcessor.ts     # Carregamento e divisão dos PDFs
-├── docker-compose.yml       # Infraestrutura local do Neo4j
 ├── DEBUG.md                 # Guia de depuração
 ├── package.json             # Dependências e scripts
 └── tsconfig.json            # Configuração do TypeScript

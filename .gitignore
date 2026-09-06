@@ -21,12 +21,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Neo4j local runtime data
-01-fundamentos-e-llms/rag/embeddings-neo4j-rag/neo4j/
-01-fundamentos-e-llms/rag/embeddings-neo4j-rag/import/
-01-fundamentos-e-llms/rag/embeddings-neo4j/neo4j/data/
-01-fundamentos-e-llms/rag/embeddings-neo4j/neo4j/logs/
-01-fundamentos-e-llms/rag/embeddings-neo4j/neo4j/plugins/
+# Neo4j local runtime data — a instância é compartilhada pelos três
+# laboratórios, e o docker-compose.yml que a define vive em rag/.
+01-fundamentos-e-llms/rag/neo4j/
+01-fundamentos-e-llms/rag/import/
+
+# Cópia parada, de antes da infra virar compartilhada. Pode ser apagada.
+01-fundamentos-e-llms/rag/embeddings-neo4j/neo4j/
 01-fundamentos-e-llms/rag/embeddings-neo4j/import/
 
 # Editor and operating-system files

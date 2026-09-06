@@ -89,7 +89,7 @@ Aplicações que precisam de um comando próprio, servidor web, arquivo `.env` o
 npm run infra:up    # inicia o Neo4j
 npm run debug       # aguarda o depurador na porta 9229
 npm run dev         # executa com reinício automático, sem pausar
-npm run infra:down  # encerra e remove os volumes do Neo4j
+npm run infra:down  # encerra o Neo4j
 ```
 
-> Atenção: `npm run infra:down` usa `--volumes` e remove os dados persistidos pelo ambiente Docker deste projeto.
+> Atenção: o Neo4j é **um só para os três laboratórios**, definido em `rag/docker-compose.yml`. O `infra:down` derruba o banco dos outros dois junto. Os dados ficam em `rag/neo4j/data` e sobrevivem: o comando remove o container, não o disco.

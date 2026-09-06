@@ -34,10 +34,12 @@ Pergunta ─→ roteador ─┤     → busca vetorial nos PDFs
 
 ## Ordem de execução
 
-Os dois compartilham **a mesma instância do Neo4j**, e há uma dependência: o `titanic-graphrag` consulta os nós `:Trecho` que o outro laboratório cria. Sem esse passo, a rota de documentos volta vazia.
+Os três compartilham **a mesma instância do Neo4j**, definida por [`docker-compose.yml`](./docker-compose.yml) aqui nesta pasta — ao lado de `compartilhado/`, porque é infraestrutura comum, não de um laboratório. Cada projeto tem `npm run infra:up` e `npm run infra:down` apontando para ela, então dá para subir o banco de dentro de qualquer um.
+
+Há uma dependência entre dois deles: o `titanic-graphrag` consulta os nós `:Trecho` que o `embeddings-neo4j` cria. Sem esse passo, a rota de documentos volta vazia.
 
 ```powershell
-# 1. Sobe o Neo4j (docker-compose vive no primeiro projeto)
+# 1. Sobe o Neo4j (o compose é o mesmo, de qualquer laboratório)
 cd embeddings-neo4j
 npm ci
 npm run infra:up
