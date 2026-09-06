@@ -1,15 +1,26 @@
 import type { DataType, PretrainedModelOptions } from "@huggingface/transformers";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 export interface TextSplitterConfig {
     chunkSize: number;
     chunkOverlap: number;
 }
 
-const promptsFolder = './prompts';
+/**
+ * Resolve caminhos a partir da raiz do projeto, e não do diretório de onde a
+ * aplicação foi chamada.
+ *
+ * Com caminhos relativos ao processo, executar de dentro de `src/` — como faz a
+ * configuração genérica de debug do VS Code, que usa o diretório do arquivo
+ * aberto — quebrava na leitura dos prompts, com `ENOENT src/prompts/...`.
+ */
+const RAIZ = resolve(import.meta.dirname, "..");
+const daRaiz = (caminho: string) => resolve(RAIZ, caminho);
+
 const promptsFiles = {
-    answerPrompt: `${promptsFolder}/answerPrompt.json`,
-    template: `${promptsFolder}/template.txt`,
+    answerPrompt: daRaiz("prompts/answerPrompt.json"),
+    template: daRaiz("prompts/template.txt"),
 };
 
 export interface PdfSource {
@@ -59,15 +70,15 @@ export const CONFIG = Object.freeze({
     },
     pdf: {
         paths: [
-            /* { path: "./docs/ia/tensores.pdf" }, */
-            { path: "./docs/titanic/O Caso Titanic.pdf" },
-            { path: "./docs/titanic/Titanic - A Projeção Do Transatlântico.pdf" },
-            { path: "./docs/titanic/surviving-the-titanic-disaster-economic-natural-andsocial-determinants.pdf" },
-            { path: "./docs/titanic/Titpaper.pdf" },
+            /* { path: daRaiz("docs/ia/tensores.pdf") }, */
+            { path: daRaiz("docs/titanic/O Caso Titanic.pdf") },
+            { path: daRaiz("docs/titanic/Titanic - A Projeção Do Transatlântico.pdf") },
+            { path: daRaiz("docs/titanic/surviving-the-titanic-disaster-economic-natural-andsocial-determinants.pdf") },
+            { path: daRaiz("docs/titanic/Titpaper.pdf") },
             // O capítulo "Hitler's Titanic" (p.25-31) trata do naufrágio do Wilhelm
             // Gustloff, não do Titanic. Remova o `pages` para indexar o e-book
             // inteiro e observar o efeito de um distrator no acervo.
-            { path: "./docs/titanic/Titanic-eBook.pdf", pages: [1, 24] as const },
+            { path: daRaiz("docs/titanic/Titanic-eBook.pdf"), pages: [1, 24] as const },
         ] satisfies PdfSource[],
     },
     textSplitter: {

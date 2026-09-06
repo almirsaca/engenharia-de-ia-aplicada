@@ -2,6 +2,23 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "RAG completo (embeddings-neo4j-rag)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/rag/embeddings-neo4j-rag/src/index.ts",
+      "cwd": "${workspaceFolder}/rag/embeddings-neo4j-rag",
+      "runtimeArgs": [
+        "--no-warnings",
+        "--env-file=.env",
+        "--experimental-strip-types"
+      ],
+      "console": "integratedTerminal",
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceFolder}/rag/*/node_modules/**"
+      ]
+    },
+    {
       "name": "Embeddings Neo4j: aplicação",
       "type": "node",
       "request": "launch",
