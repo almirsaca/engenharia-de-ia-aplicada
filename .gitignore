@@ -26,10 +26,6 @@ pnpm-debug.log*
 01-fundamentos-e-llms/rag/neo4j/
 01-fundamentos-e-llms/rag/import/
 
-# Cópia parada, de antes da infra virar compartilhada. Pode ser apagada.
-01-fundamentos-e-llms/rag/embeddings-neo4j/neo4j/
-01-fundamentos-e-llms/rag/embeddings-neo4j/import/
-
 # Editor and operating-system files
 .idea/
 .DS_Store
