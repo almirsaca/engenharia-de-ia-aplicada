@@ -1,0 +1,14 @@
+{
+  "name": "provocacoes",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Perguntas hostis contra os laboratórios de RAG, para verificar onde está a defesa de verdade",
+  "type": "module",
+  "scripts": {
+    "titanic:cypher": "node --no-warnings --env-file ../titanic-graphrag/.env --experimental-strip-types titanic-cypher.ts"
+  },
+  "engines": {
+    "node": ">=22.13.1"
+  },
+  "license": "MIT"
+}

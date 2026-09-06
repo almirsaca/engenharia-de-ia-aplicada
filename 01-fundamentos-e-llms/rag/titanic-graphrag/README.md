@@ -377,7 +377,17 @@ Testando as três provocações abaixo, duas rodadas cada, o `minimax-m2.7` recu
 
 Recusar, porém, é comportamento do modelo — muda com a versão, a temperatura e a redação. A garantia continua sendo `validarCypher`, que roda antes de `executar` independentemente do que o modelo decida.
 
-O segundo caso expõe uma fragilidade: o modelo recusou **e** devolveu a contagem pedida, correta, mas a consulta foi rejeitada mesmo assim — uma vez por conter "delete" na frase de recusa, outra por começar com explicação. O `gerarCypher` remove a cerca de código que o modelo põe em volta da consulta, não a prosa.
+O segundo caso expõe uma fragilidade: o modelo recusa a parte destrutiva **e** responde a parte legítima na mesma saída, e o que acontece depende de onde a prosa cai.
+
+| Onde a prosa ficou | `validarCypher` | Consequência |
+| --- | --- | --- |
+| antes da consulta | rejeitou — "não começa por MATCH" | consulta legítima perdida |
+| na mesma linha, com a palavra "delete" | rejeitou — "contém delete" | consulta legítima perdida |
+| depois da consulta | aceitou | vai para o Neo4j e falha com `Invalid input 'A'` |
+
+O `gerarCypher` remove a cerca de código que o modelo põe em volta, não a prosa. Nenhum dos casos escreve no banco — todos falham para o lado seguro —, mas nenhum responde à pergunta.
+
+O cenário está em [`provocacoes/titanic-cypher.ts`](../provocacoes/titanic-cypher.ts) e roda com `npm run titanic:cypher`.
 
 > **Sobre o contexto entregue à LLM:** o resultado do Cypher é enviado junto da consulta que o produziu e de uma frase dizendo de onde vem. Sem essa procedência, o modelo recebe um JSON solto como `[{"total":72}]` e tende a responder que o contexto é insuficiente — foi exatamente o que aconteceu na primeira versão.
 
