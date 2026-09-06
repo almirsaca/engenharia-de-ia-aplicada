@@ -434,3 +434,13 @@ Os nós `:Trecho` são criados pelo outro laboratório. Rode `npm start` em `../
 ### `ERESOLVE` no `npm install`
 
 Confirme que o `.npmrc` desta pasta existe e contém `legacy-peer-deps=true`.
+
+## Créditos
+
+Escrito por **Almir Martinelli** no curso de Engenharia de IA Aplicada. Diferente dos outros dois laboratórios, este **não descende de um exemplo da aula** — nasceu da pergunta que o [embeddings-neo4j](../embeddings-neo4j/) não conseguia responder: *"quantas mulheres da terceira classe sobreviveram?"*.
+
+Herda do material de **Erick Wendel** o ambiente em que se apoia — o Neo4j como vector store e a estrutura de projeto dos exemplos 12 e 13 —, além dos nós `:Trecho`, que são criados pelo laboratório vizinho.
+
+Os dados dos passageiros vêm da competição [Titanic - Machine Learning from Disaster](https://www.kaggle.com/competitions/titanic), do Kaggle.
+
+> Os commits registram co-autoria do Claude Code, usado como par na implementação e na redação da documentação.

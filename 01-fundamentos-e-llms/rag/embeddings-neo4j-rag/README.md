@@ -31,7 +31,7 @@ Editar o comportamento do assistente não exige tocar em código. E **todo campo
 role   task   instructions   constraints.tone   constraints.language   constraints.format
 ```
 
-O template tem oito marcadores; os outros dois, `{question}` e `{context}`, vêm da execução. O encaixe está em [`ai.ts`](../embeddings-neo4j-rag/src/ai.ts#L76-L87), e é literal: cada chave passada ao `invoke` corresponde a um marcador.
+O template tem oito marcadores; os outros dois, `{question}` e `{context}`, vêm da execução. O encaixe está em [`ai.ts`](./src/ai.ts#L76-L87), e é literal: cada chave passada ao `invoke` corresponde a um marcador.
 
 > **Divergimos do exemplo da aula aqui.** O `answerPrompt.json` original tem também `metadata`, `examples`, `context_rules` e `constraints.max_length` — quatro blocos que **nenhuma linha de código lê**. Ficavam no arquivo com cara de configuração: quem lesse `"use_only_provided_context": true` ou `"max_length": 500` concluiria que aquilo governa o comportamento, e não governa. Removemos para que o arquivo mostre exatamente o que o modelo recebe, nem mais nem menos.
 >
@@ -166,3 +166,17 @@ Os fundamentos — chunking, normalização de PDF, escala dos percentuais, índ
 | [Fluxo RAG](../embeddings-neo4j/docs/Fluxo%20RAG.md) | o fluxo completo, filtros, reranking, fontes divergentes |
 | [Tutorial — Estratégias de Recuperação](../embeddings-neo4j/docs/Tutorial%20-%20Estrategias%20de%20Recuperacao.pdf) | BM25, híbrida, MMR, small-to-big, self-query, HyDE, ColBERT |
 | [Melhorias planejadas](../embeddings-neo4j/docs/Melhorias%20planejadas.md) | o que falta, com prioridade e esforço |
+
+## Créditos
+
+Parte do **exemplo 13** do material da aula, de **Erick Wendel** — dele vêm a classe `src/ai.ts`, os dois arquivos de `prompts/` e a estrutura do projeto, herdada por sua vez do exemplo 12.
+
+Adaptado por **Almir Martinelli**, no curso de Engenharia de IA Aplicada:
+
+- prompt reescrito do tema original (TensorFlow.js) para o caso Titanic, e reduzido aos campos que o código de fato lê;
+- `answerQuestion` passou a aceitar contexto pronto, para não repetir a busca vetorial já feita por quem chama;
+- barra de progresso, ordem da saída (resposta antes dos trechos) e linha de fontes com arquivo e página;
+- rótulo e índice próprios, para conviver com os outros dois laboratórios no mesmo Neo4j;
+- tudo que veio junto do [embeddings-neo4j](../embeddings-neo4j/#créditos): acervo do Titanic, modelo multilíngue, normalização de PDF, lotes, idiomas e reranking.
+
+> Os commits registram co-autoria do Claude Code, usado como par na implementação e na redação da documentação.

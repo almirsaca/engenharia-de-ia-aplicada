@@ -384,3 +384,19 @@ Execute a aplicação pelos scripts npm ou pela configuração de debug do proje
 ### Breakpoint não é atingido
 
 Não escolha o depurador genérico **Node.js**. Use **Embeddings Neo4j: aplicação**, conforme descrito no [guia de depuração](./DEBUG.md).
+
+## Créditos
+
+Parte do **exemplo 12** do material da aula, de **Erick Wendel** — dele vêm `src/config.ts`, `documentProcessor.ts`, `src/index.ts`, `src/util.ts`, a infraestrutura Docker e a configuração do projeto.
+
+Adaptado por **Almir Martinelli**, no curso de Engenharia de IA Aplicada:
+
+- acervo trocado do `tensores.pdf` para os cinco PDFs sobre o Titanic, com recorte por intervalo de páginas;
+- modelo de embeddings multilíngue no lugar do monolíngue em inglês;
+- `src/textNormalizer.ts`, que reconstitui parágrafos do texto extraído do PDF;
+- indexação em lotes, scores na exibição, metadados de arquivo e página;
+- menu de idioma e reranking opcional (`src/llm.ts` e [`../compartilhado/`](../compartilhado/)).
+
+As medições que justificam cada uma dessas decisões estão no [README da pasta `rag/`](../README.md#o-que-foi-medido).
+
+> Os commits registram co-autoria do Claude Code, usado como par na implementação e na redação da documentação.

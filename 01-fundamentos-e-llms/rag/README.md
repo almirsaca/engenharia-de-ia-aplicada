@@ -119,3 +119,20 @@ Um resultado de "60% de similaridade" corresponde a cosseno 0,20.
 - **Neo4j 5 Community** em Docker, servindo ao mesmo tempo de banco de grafos e de vector store.
 - **Embeddings locais** com Transformers.js (`paraphrase-multilingual-MiniLM-L12-v2`, 384 dimensões) — sem custo e sem chave.
 - **OpenRouter** apenas no `titanic-graphrag`, para roteamento e redação da resposta. Sem chave, ele degrada para modo somente-busca em vez de falhar.
+
+## Créditos
+
+Os laboratórios nasceram do material do curso de **Engenharia de IA Aplicada**, ministrado por **Erick Wendel**, e foram adaptados e estendidos por **Almir Martinelli**.
+
+| Pasta | Origem |
+| --- | --- |
+| [embeddings-neo4j](./embeddings-neo4j/#créditos) | exemplo 12 do material da aula |
+| [embeddings-neo4j-rag](./embeddings-neo4j-rag/#créditos) | exemplo 13 do material da aula |
+| [titanic-graphrag](./titanic-graphrag/#créditos) | original — responde ao que a busca vetorial não resolve |
+| [compartilhado](./compartilhado/) e [provocacoes](./provocacoes/) | original |
+
+O que veio da aula é a espinha: Neo4j como vector store, LangChain para carregar e dividir PDFs, embeddings locais e a cadeia de recuperação e geração. O que foi acrescentado está listado no README de cada laboratório, e as medições que justificam cada decisão estão em [O que foi medido](#o-que-foi-medido).
+
+Os dados de passageiros vêm da competição [Titanic - Machine Learning from Disaster](https://www.kaggle.com/competitions/titanic), do Kaggle.
+
+> Os commits registram co-autoria do Claude Code, usado como par na implementação e na redação da documentação.
