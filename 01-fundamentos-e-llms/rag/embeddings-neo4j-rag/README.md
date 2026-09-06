@@ -18,20 +18,24 @@ O acervo é o mesmo dos outros: cinco PDFs sobre o Titanic, em português e ingl
 
 **A classe `AI`** (`src/ai.ts`), que encadeia recuperação e geração com `RunnableSequence` do LangChain. Veio do [exemplo 13 do material da aula](../../../../material-aulas/modulo01-fundamentos-de-ia-e-llms-para-programadores/exemplo-13-embeddings-neo4j-rag/), com uma única alteração — descrita adiante.
 
-**O prompt fora do código**, em `prompts/`:
+**O prompt fora do código**, em `prompts/` — também do exemplo 13, de autoria de **Erick Wendel**, adaptado do tema original (TensorFlow.js) para o Titanic:
 
 | Arquivo | Conteúdo |
 | --- | --- |
 | `answerPrompt.json` | papel, tarefa, instruções e restrições |
 | `template.txt` | o template com os marcadores `{role}`, `{task}`, `{context}`, `{question}`… |
 
-Editar o comportamento do assistente não exige tocar em código. Vale saber que **só seis campos do JSON chegam ao modelo**:
+Editar o comportamento do assistente não exige tocar em código. E **todo campo do JSON chega ao modelo** — os seis que existem:
 
 ```
 role   task   instructions   constraints.tone   constraints.language   constraints.format
 ```
 
-Os blocos `metadata`, `examples` e `context_rules` ficam no arquivo como documentação, mas **não** entram no prompt. Se você mudar um `context_rules` esperando efeito, ele não virá — a regra precisa estar em `instructions`.
+O template tem oito marcadores; os outros dois, `{question}` e `{context}`, vêm da execução. O encaixe está em [`ai.ts`](../embeddings-neo4j-rag/src/ai.ts#L76-L87), e é literal: cada chave passada ao `invoke` corresponde a um marcador.
+
+> **Divergimos do exemplo da aula aqui.** O `answerPrompt.json` original tem também `metadata`, `examples`, `context_rules` e `constraints.max_length` — quatro blocos que **nenhuma linha de código lê**. Ficavam no arquivo com cara de configuração: quem lesse `"use_only_provided_context": true` ou `"max_length": 500` concluiria que aquilo governa o comportamento, e não governa. Removemos para que o arquivo mostre exatamente o que o modelo recebe, nem mais nem menos.
+>
+> A consequência prática: um limite de tamanho, para valer, precisa ser uma frase em `instructions` — que é o único bloco em lista livre que de fato viaja no prompt.
 
 ## Pré-requisitos
 
