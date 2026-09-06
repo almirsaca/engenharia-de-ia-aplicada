@@ -12,6 +12,11 @@ type params = {
     promptConfig: any,
     templateText: string,
     topK: number,
+    /**
+     * Prazo do passo inteiro de redação. O `timeout` do cliente limita apenas
+     * cada tentativa isolada, e `maxRetries` o multiplica.
+     */
+    prazoTotalMs: number,
 }
 
 interface ChainState {
@@ -84,6 +89,11 @@ export class AI {
             ).join('\n'),
             question: input.question,
             context: input.context
+        }, {
+            // Sem o sinal, a chamada cai no padrão do SDK — 10 minutos por
+            // tentativa, multiplicados por `maxRetries`. O sinal aborta a
+            // requisição de verdade, e cobre as retentativas internas.
+            signal: AbortSignal.timeout(this.params.prazoTotalMs),
         })
 
         return {

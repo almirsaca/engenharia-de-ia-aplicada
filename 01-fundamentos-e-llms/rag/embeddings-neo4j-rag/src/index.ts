@@ -70,9 +70,14 @@ try {
         pretrainedOptions: CONFIG.embedding.pretrainedOptions as PretrainedOptions
     })
 
+    // Segundo cliente do projeto: este redige a resposta, o de `llm.ts` reordena.
+    // Mantenha as duas configurações em sincronia — foi por estarem separadas que
+    // o `timeout` abaixo ficou de fora por um tempo, e a redação herdou o padrão
+    // do SDK: 10 minutos por tentativa, multiplicados por `maxRetries`.
     const nlpModel = new ChatOpenAI({
         temperature: CONFIG.openRouter.temperature,
         maxRetries: CONFIG.openRouter.maxRetries,
+        timeout: CONFIG.openRouter.timeoutMs,
         modelName: CONFIG.openRouter.nlpModel,
         openAIApiKey: CONFIG.openRouter.apiKey,
         configuration: {
@@ -104,6 +109,7 @@ try {
         promptConfig: CONFIG.promptConfig,
         templateText: CONFIG.templateText,
         topK: CONFIG.similarity.topK,
+        prazoTotalMs: CONFIG.openRouter.prazoTotalMs,
     })
 
     await clearAll(_neo4jVectorStore, CONFIG.neo4j.nodeLabel)

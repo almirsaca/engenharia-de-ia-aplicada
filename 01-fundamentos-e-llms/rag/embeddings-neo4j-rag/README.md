@@ -16,7 +16,7 @@ O acervo é o mesmo dos outros: cinco PDFs sobre o Titanic, em português e ingl
 
 ## O que este laboratório acrescenta
 
-**A classe `AI`** (`src/ai.ts`), que encadeia recuperação e geração com `RunnableSequence` do LangChain. Veio do [exemplo 13 do material da aula](../../../../material-aulas/modulo01-fundamentos-de-ia-e-llms-para-programadores/exemplo-13-embeddings-neo4j-rag/), com uma única alteração — descrita adiante.
+**A classe `AI`** (`src/ai.ts`), que encadeia recuperação e geração com `RunnableSequence` do LangChain. Veio do [exemplo 13 do material da aula](../../../../material-aulas/modulo01-fundamentos-de-ia-e-llms-para-programadores/exemplo-13-embeddings-neo4j-rag/), com duas alterações — descritas adiante.
 
 **O prompt fora do código**, em `prompts/` — também do exemplo 13, de autoria de **Erick Wendel**, adaptado do tema original (TensorFlow.js) para o Titanic:
 
@@ -86,7 +86,9 @@ Sim, havia botes — mas em quantidade insuficiente...
 
 A ordem é deliberada: quem só quer a resposta não precisa rolar a tela, e quem quer conferir a procedência encontra os trechos logo abaixo, com o score de cada um.
 
-## A alteração feita na classe `AI`
+## As alterações feitas na classe `AI`
+
+### 1. Aceitar contexto pronto
 
 O `retrieveVectorSearchResults` original faz a própria busca vetorial. Como o `index.ts` já busca — e opcionalmente reordena — antes de chamar, isso significaria **buscar duas vezes** e descartar a reordenação.
 
@@ -104,6 +106,20 @@ if (input.context) {
 ```
 
 Sem o segundo argumento, o comportamento é exatamente o do material da aula.
+
+### 2. Prazo para a redação
+
+O `invoke` da cadeia interna não tinha limite de tempo, e o cliente criado no `index.ts` também não recebia `timeout`. A chamada caía no padrão do SDK da OpenAI — **10 minutos por tentativa**, multiplicados por `maxRetries: 2`. A barra avisava "mais lento que o normal" aos 45 s e depois só esperava.
+
+A classe passou a receber `prazoTotalMs` e a repassá-lo como sinal:
+
+```typescript
+signal: AbortSignal.timeout(this.params.prazoTotalMs)
+```
+
+O `timeout` do cliente limita cada tentativa isolada; o sinal cobre o passo inteiro, retentativas incluídas. Medido: com prazo de 1,5 s a chamada aborta em 1,5 s, e com os 60 s de configuração uma resposta real leva 9,8 s.
+
+O `config.ts` já trazia `timeoutMs` e `prazoTotalMs`, mas só `src/llm.ts` — o cliente do reranking, desligado por padrão — os lia. São dois clientes de LLM neste projeto, e a configuração de um não alcançava o outro.
 
 O `debugLog` recebe `() => {}` no `index.ts`: a classe imprimiria a pergunta e a resposta no formato dela, e o `index.ts` imprimiria de novo. A formatação fica com quem chama.
 
