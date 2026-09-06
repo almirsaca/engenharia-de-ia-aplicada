@@ -1,4 +1,4 @@
-Você é um {role}.
+{role}.
 
 **Contexto e Regras:**
 - Tarefa: {task}
